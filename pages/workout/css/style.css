@@ -25,28 +25,12 @@ button {
 
 body {
     min-height: 100vh;
-    background:
-        radial-gradient(
-            circle at 50% -10%,
-            rgba(0, 220, 255, 0.08),
-            transparent 35%
-        ),
-        #07101c;
+
+    background-color: #07101c;
 
     color: #e8eef5;
-  background-image:
-        radial-gradient(circle at 50% -10%, rgba(0, 220, 255, 0.08), transparent 35%),
-        url('../../../assets/images/background-5.jpg');
 
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    font-family:
-        Inter,
-        "Segoe UI",
-        Arial,
-        sans-serif;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
 }
 
 
@@ -55,14 +39,25 @@ body {
 ========================================================= */
 
 .workout-page {
+    position: relative;
     width: 100%;
-    min-height: calc(100vh - 80px);
+    height: 100vh;
+    min-height: 100vh;
+    box-sizing: border-box;
+    overflow: hidden;
 
     display: flex;
     justify-content: center;
 
     padding: 50px 30px 80px;
-    
+
+    background-image:
+        radial-gradient(circle at 50% -10%, rgba(0, 220, 255, 0.08), transparent 35%),
+        url('../../../assets/images/background-5.jpg');
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 
@@ -969,4 +964,305 @@ body {
 .workout-card.is-visible {
     opacity: 1;
     transform: translateX(0) scale(1);
+}/* =========================================================
+   SEÇÃO 2 — WORKOUT SELECTOR
+========================================================= */
+
+.workout-selector {
+        position: relative;
+    width: 100%;
+    min-height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* fundo azul escuro sólido, cobre a foto do body */
+    background-color: #07101c;
 }
+.workout-selector-placeholder {
+    color: rgba(232, 238, 245, 0.4);
+    font-size: 18px;
+}
+.selector-page {
+  position: absolute;
+  inset: 40px;
+  z-index: 0;
+
+  padding: 70px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(15, 35, 55, 0.98),
+      rgba(7, 20, 34, 0.98)
+    );
+
+  border:
+    1px solid
+    rgba(80, 160, 255, 0.25);
+
+  border-radius:
+    4px 20px 20px 4px;
+
+  box-shadow:
+    0 40px 100px
+    rgba(0, 0, 0, 0.55),
+    inset 8px 0 25px
+    rgba(0, 0, 0, 0.25);
+}
+/* lombada */
+.selector-page::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      rgba(80, 180, 255, 0.7),
+      transparent
+    );
+}
+
+/* brilho */
+.selector-page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(80, 180, 255, 0.08),
+      transparent 25%
+    );
+
+  border-radius:
+    4px 20px 20px 4px;
+}
+
+.selector-header {
+  position: relative;
+  z-index: 2;
+  max-width: 600px;
+}
+
+.selector-label {
+  display: block;
+  margin-bottom: 14px;
+
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+
+  color: var(--color-accent);
+}
+
+.selector-header h2 {
+  font-size: 42px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  margin-bottom: 14px;
+}
+
+.selector-header p {
+  font-size: 15px;
+  margin-top: 400px;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+}
+
+
+
+/* =========================================================
+   NÍVEL DE DENTRO — EXERCISE CAROUSEL (o "sistema solar" 3D)
+========================================================= */
+
+.exercise-carousel {
+    position: relative;
+    width: 100%;
+    height: 420px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 200px;
+    perspective: 1200px;
+    overflow: visible;
+}
+
+.exercise-track {
+    position: relative;
+    width: 260px;
+    height: 320px;
+    transform-style: preserve-3d;
+}
+
+.exercise-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 240px;
+    height: 280px;
+
+    padding: 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+
+    font-size: 18px;
+    font-weight: 700;
+    color: #eef3f6;
+
+    border-radius: 16px;
+    border: 1px solid rgba(76, 226, 235, 0.35);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(17, 31, 46, 0.9),
+            rgba(5, 15, 27, 0.95)
+        );
+
+    box-shadow:
+        0 0 0 1px rgba(255, 132, 74, 0.1),
+        0 0 25px rgba(0, 0, 0, 0.3);
+
+    transform-style: preserve-3d;
+    transform-origin: center center;
+
+    transition:
+        transform 0.6s cubic-bezier(0.77, 0, 0.175, 1),
+        opacity 0.6s ease,
+        filter 0.6s ease;
+}
+
+
+/* =========================================================
+   SETAS DO EXERCISE CAROUSEL (nível de dentro)
+========================================================= */
+
+.exercise-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: #e8eef5;
+    font-size: 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    z-index: 20;
+    backdrop-filter: blur(10px);
+}
+
+.exercise-nav-left {
+    left: 10px;
+}
+
+.exercise-nav-right {
+    right: 10px;
+}/* =========================================================
+   NÍVEL DE FORA — CATEGORY CAROUSEL (sistema solar de categorias)
+========================================================= */
+
+.category-carousel {
+    position: relative;
+    width: 100%;
+    height: 620px;
+  position: relative;
+  z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    perspective: 1800px;
+    overflow: visible;
+}
+
+.category-track {
+    position: relative;
+    width: 520px;
+    height: 560px;
+    transform-style: preserve-3d;
+}
+.category-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 480px;
+    height: 520px;
+    
+    padding: 24px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+
+    /* removido: border, background, box-shadow, border-radius */
+
+    transform-style: preserve-3d;
+    transform-origin: center center;
+
+    transition:
+        transform 0.6s cubic-bezier(0.77, 0, 0.175, 1),
+        opacity 0.6s ease,
+        filter 0.6s ease;
+}
+
+.category-panel-label {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(76, 226, 235, 0.9);
+}
+
+
+/* =========================================================
+   BOTÕES DE NAVEGAÇÃO DO NÍVEL DE FORA
+========================================================= */
+
+.category-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: #e8eef5;
+    font-size: 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    z-index: 30;
+    backdrop-filter: blur(10px);
+}
+
+.category-nav-left { left: 20px; }
+.category-nav-right { right: 20px; }
