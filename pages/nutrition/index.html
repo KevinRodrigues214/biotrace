@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>BioTrace — Nutrition</title>
+
+
+  <!-- =========================================
+       CSS GLOBAL
+  ========================================== -->
+
+  <link
+    rel="stylesheet"
+    href="../../assets/css/global.css"
+  >
+
+
+  <!-- =========================================
+       CSS EXCLUSIVO DA NUTRITION
+  ========================================== -->
+
+  <link
+    rel="stylesheet"
+    href="./css/style.css"
+  >
+
+</head>
+
+
+<body>
+
+
+  <!-- =========================================
+       HEADER GLOBAL
+  ========================================== -->
+
+  <div id="header-placeholder"></div>
+
+
+  <!-- =========================================
+       PRIMEIRA SEÇÃO — NUTRITION
+  ========================================== -->
+
+  <main class="nutrition-page">
+
+    <section class="nutrition-carousel">
+
+
+      <button
+        class="carousel-button carousel-button-left"
+        aria-label="Previous panel"
+        type="button"
+      >
+        ←
+      </button>
+
+
+      <div class="carousel-track">
+
+
+        <!-- PANEL 1 -->
+
+        <article class="nutrition-panel panel-1">
+
+          <h2>
+            Meal Plan
+          </h2>
+
+          <p class="panel-subtitle">
+            Today's Nutrition
+          </p>
+
+
+          <div class="meal">
+
+            <span>
+              Breakfast
+            </span>
+
+            <strong>
+              280 kcal
+            </strong>
+
+          </div>
+
+
+          <div class="meal">
+
+            <span>
+              Lunch
+            </span>
+
+            <strong>
+              520 kcal
+            </strong>
+
+          </div>
+
+
+          <div class="meal">
+
+            <span>
+              Dinner
+            </span>
+
+            <strong>
+              640 kcal
+            </strong>
+
+          </div>
+
+        </article>
+
+
+        <!-- PANEL 2 -->
+
+        <article class="nutrition-panel panel-2">
+
+          <h2>
+            Macro-nutrients
+          </h2>
+
+
+          <div class="macro">
+
+            <span>
+              Protein
+            </span>
+
+            <strong>
+              26%
+            </strong>
+
+          </div>
+
+
+          <div class="macro">
+
+            <span>
+              Carbs
+            </span>
+
+            <strong>
+              30%
+            </strong>
+
+          </div>
+
+
+          <div class="macro">
+
+            <span>
+              Fats
+            </span>
+
+            <strong>
+              20%
+            </strong>
+
+          </div>
+
+        </article>
+
+
+        <!-- PANEL 3 -->
+
+        <article class="nutrition-panel panel-3">
+
+          <h2>
+            Daily Overview
+          </h2>
+
+
+          <div class="nutrition-stat">
+
+            <span>
+              Calories
+            </span>
+
+            <strong>
+              1,440
+            </strong>
+
+          </div>
+
+
+          <div class="nutrition-stat">
+
+            <span>
+              Water
+            </span>
+
+            <strong>
+              75%
+            </strong>
+
+          </div>
+
+
+          <div class="nutrition-stat">
+
+            <span>
+              Recovery
+            </span>
+
+            <strong>
+              68%
+            </strong>
+
+          </div>
+
+        </article>
+
+
+        <!-- PANEL 4 -->
+
+        <article class="nutrition-panel panel-4">
+
+          <h2>
+            Goals
+          </h2>
+
+
+          <div class="goal">
+
+            <span>
+              Weight
+            </span>
+
+            <strong>
+              70%
+            </strong>
+
+          </div>
+
+
+          <div class="goal">
+
+            <span>
+              Protein
+            </span>
+
+            <strong>
+              82%
+            </strong>
+
+          </div>
+
+
+          <div class="goal">
+
+            <span>
+              Water
+            </span>
+
+            <strong>
+              75%
+            </strong>
+
+          </div>
+
+        </article>
+
+
+      </div>
+
+
+      <button
+        class="carousel-button carousel-button-right"
+        aria-label="Next panel"
+        type="button"
+      >
+        →
+      </button>
+
+
+    </section>
+
+  </main>
+
+
+
+  <!-- =========================================
+       SEGUNDA SEÇÃO — MEALS
+  ========================================== -->
+
+  <section class="nutrition-meals">
+
+
+    <!-- =========================================
+         CAPA
+    ========================================== -->
+
+    <div class="meals-cover"></div>
+
+
+    <!-- =========================================
+         STAGE
+         AZUL + FORMULÁRIO FICAM NO MESMO ESPAÇO
+    ========================================== -->
+
+    <div class="meals-stage">
+
+
+      <!-- =======================================
+           PAINEL AZUL
+      ======================================== -->
+
+      <div class="meals-page">
+
+
+        <!-- HEADER -->
+
+        <div class="meals-header">
+
+          <span class="meals-label">
+            NUTRITION
+          </span>
+
+
+          <h2>
+            Your Meals
+          </h2>
+
+
+          <p>
+            Organize your daily meals and keep track
+            of your nutrition.
+          </p>
+
+        </div>
+
+
+
+        <!-- =====================================
+             CARDS
+        ====================================== -->
+
+        <div class="meals-content">
+
+
+          <!-- MEAL CARD 1 -->
+
+          <div
+            class="meal-card"
+            role="button"
+            tabindex="0"
+          >
+
+            <div class="meal-card-icon">
+              +
+            </div>
+
+
+            <span class="meal-card-title">
+              Add a meal
+            </span>
+
+
+            <span class="meal-card-subtitle">
+              No meal added
+            </span>
+
+          </div>
+
+
+
+          <!-- MEAL CARD 2 -->
+
+          <div
+            class="meal-card"
+            role="button"
+            tabindex="0"
+          >
+
+            <div class="meal-card-icon">
+              +
+            </div>
+
+
+            <span class="meal-card-title">
+              Add a meal
+            </span>
+
+
+            <span class="meal-card-subtitle">
+              No meal added
+            </span>
+
+          </div>
+
+
+
+          <!-- MEAL CARD 3 -->
+
+          <div
+            class="meal-card"
+            role="button"
+            tabindex="0"
+          >
+
+            <div class="meal-card-icon">
+              +
+            </div>
+
+
+            <span class="meal-card-title">
+              Add a meal
+            </span>
+
+
+            <span class="meal-card-subtitle">
+              No meal added
+            </span>
+
+          </div>
+
+
+
+          <!-- ADD MEAL BUTTON -->
+
+          <button
+            class="add-meal-button"
+            type="button"
+          >
+
+            <span class="add-meal-plus">
+              +
+            </span>
+
+
+            <span>
+              Add Meal
+            </span>
+
+          </button>
+
+
+        </div>
+
+
+      </div>
+
+
+
+      <!-- =======================================
+           PAINEL BRANCO — FORMULÁRIO
+           
+           Ele começa abaixo do stage e sobe
+           quando .form-open é ativado.
+      ======================================== -->
+
+      <div class="meal-form-page">
+
+
+        <!-- CLOSE -->
+
+        <button
+          class="meal-form-close"
+          id="mealFormClose"
+          type="button"
+          aria-label="Close meal form"
+        >
+          ×
+        </button>
+
+
+
+        <!-- =====================================
+             HEADER DO FORMULÁRIO
+        ====================================== -->
+
+        <div class="meal-form-header">
+
+          <span>
+            NUTRITION
+          </span>
+
+
+          <h2>
+            Add Meal
+          </h2>
+
+
+          <p>
+            Record your meal and track its
+            nutritional information.
+          </p>
+
+        </div>
+
+
+
+        <!-- =====================================
+             MEAL INFORMATION
+        ====================================== -->
+
+        <div class="meal-form-section">
+
+
+          <span class="meal-form-title">
+            MEAL INFORMATION
+          </span>
+
+
+
+          <!-- MEAL NAME -->
+
+          <div class="meal-form-group">
+
+            <label for="mealName">
+              Meal Name
+            </label>
+
+
+            <input
+              type="text"
+              id="mealName"
+              placeholder="e.g. Chicken & Rice"
+            >
+
+          </div>
+
+
+
+          <!-- TYPE + DATE -->
+
+          <div class="meal-form-row">
+
+
+            <div class="meal-form-group">
+
+              <label for="mealType">
+                Meal Type
+              </label>
+
+
+              <select id="mealType">
+
+                <option value="breakfast">
+                  Breakfast
+                </option>
+
+                <option value="lunch">
+                  Lunch
+                </option>
+
+                <option value="dinner">
+                  Dinner
+                </option>
+
+                <option value="snack">
+                  Snack
+                </option>
+
+              </select>
+
+            </div>
+
+
+
+            <div class="meal-form-group">
+
+              <label for="mealDate">
+                Date & Time
+              </label>
+
+
+              <input
+                type="datetime-local"
+                id="mealDate"
+              >
+
+            </div>
+
+
+          </div>
+
+
+
+          <!-- QUANTITY -->
+
+          <div class="meal-form-group">
+
+            <label for="mealQuantity">
+              Quantity
+            </label>
+
+
+            <div class="quantity-input">
+
+              <input
+                type="number"
+                id="mealQuantity"
+                placeholder="250"
+                min="0"
+              >
+
+
+              <select id="mealUnit">
+
+                <option value="g">
+                  g
+                </option>
+
+                <option value="kg">
+                  kg
+                </option>
+
+                <option value="ml">
+                  ml
+                </option>
+
+                <option value="L">
+                  L
+                </option>
+
+              </select>
+
+            </div>
+
+          </div>
+
+
+        </div>
+
+
+
+        <!-- =====================================
+             NUTRITION
+        ====================================== -->
+
+        <div class="meal-form-section">
+
+
+          <span class="meal-form-title">
+            NUTRITION
+          </span>
+
+
+
+          <div class="nutrition-input-grid">
+
+
+            <!-- CALORIES -->
+
+            <div class="meal-form-group">
+
+              <label for="calories">
+                Calories
+              </label>
+
+
+              <div class="input-with-unit">
+
+                <input
+                  type="number"
+                  id="calories"
+                  placeholder="520"
+                  min="0"
+                >
+
+
+                <span>
+                  kcal
+                </span>
+
+              </div>
+
+            </div>
+
+
+
+            <!-- PROTEIN -->
+
+            <div class="meal-form-group">
+
+              <label for="protein">
+                Protein
+              </label>
+
+
+              <div class="input-with-unit">
+
+                <input
+                  type="number"
+                  id="protein"
+                  placeholder="38"
+                  min="0"
+                >
+
+
+                <span>
+                  g
+                </span>
+
+              </div>
+
+            </div>
+
+
+
+            <!-- CARBS -->
+
+            <div class="meal-form-group">
+
+              <label for="carbs">
+                Carbohydrates
+              </label>
+
+
+              <div class="input-with-unit">
+
+                <input
+                  type="number"
+                  id="carbs"
+                  placeholder="54"
+                  min="0"
+                >
+
+
+                <span>
+                  g
+                </span>
+
+              </div>
+
+            </div>
+
+
+
+            <!-- FAT -->
+
+            <div class="meal-form-group">
+
+              <label for="fat">
+                Fat
+              </label>
+
+
+              <div class="input-with-unit">
+
+                <input
+                  type="number"
+                  id="fat"
+                  placeholder="14"
+                  min="0"
+                >
+
+
+                <span>
+                  g
+                </span>
+
+              </div>
+
+            </div>
+
+
+
+            <!-- FIBER -->
+
+            <div class="meal-form-group">
+
+              <label for="fiber">
+                Fiber
+              </label>
+
+
+              <div class="input-with-unit">
+
+                <input
+                  type="number"
+                  id="fiber"
+                  placeholder="6"
+                  min="0"
+                >
+
+
+                <span>
+                  g
+                </span>
+
+              </div>
+
+            </div>
+
+
+
+            <!-- SUGAR -->
+
+            <div class="meal-form-group">
+
+              <label for="sugar">
+                Sugar
+              </label>
+
+
+              <div class="input-with-unit">
+
+                <input
+                  type="number"
+                  id="sugar"
+                  placeholder="8"
+                  min="0"
+                >
+
+
+                <span>
+                  g
+                </span>
+
+              </div>
+
+            </div>
+
+
+
+            <!-- SODIUM -->
+
+            <div class="meal-form-group">
+
+              <label for="sodium">
+                Sodium
+              </label>
+
+
+              <div class="input-with-unit">
+
+                <input
+                  type="number"
+                  id="sodium"
+                  placeholder="420"
+                  min="0"
+                >
+
+
+                <span>
+                  mg
+                </span>
+
+              </div>
+
+            </div>
+
+
+          </div>
+
+
+        </div>
+
+
+
+        <!-- =====================================
+             ACTIONS
+        ====================================== -->
+
+        <div class="meal-modal-actions">
+
+
+          <button
+            class="meal-cancel-button"
+            id="mealFormCancel"
+            type="button"
+          >
+            Cancel
+          </button>
+
+
+          <button
+            class="meal-save-button"
+            id="mealFormSave"
+            type="button"
+          >
+            Save Meal
+          </button>
+
+
+        </div>
+
+
+      </div>
+
+
+    </div>
+
+  </section>
+
+
+
+  <!-- =========================================
+       JS GLOBAL
+  ========================================== -->
+
+  <script src="../../assets/js/global.js"></script>
+
+
+  <!-- =========================================
+       JS NUTRITION
+  ========================================== -->
+
+  <script src="./js/script.js"></script>
+
+
+</body>
+
+</html>

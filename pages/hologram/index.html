@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>BioTrace — Hologram</title>
+
+  <!-- CSS global do BioTrace -->
+  <link rel="stylesheet" href="../../assets/css/global.css">
+
+  <!-- CSS exclusivo do holograma -->
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+
+  <!-- Header global -->
+  <div id="header-placeholder"></div>
+
+  <main class="hologram-page">
+
+    <section class="hologram-container">
+      <!-- ========================= -->
+      <!-- HOLOGRAMA PRINCIPAL -->
+      <!-- ========================= -->
+
+      <div id="hologram-viewer"></div>
+
+
+      <!-- ========================= -->
+      <!-- ENERGY LEVEL -->
+      <!-- ========================= -->
+
+      <aside class="energy-level-panel">
+
+        <div class="panel-header">
+
+          <span>Energy Level</span>
+
+          <span class="panel-status">— — —</span>
+
+        </div>
+
+        <div class="energy-chart">
+
+          <svg
+            class="energy-chart-svg"
+            viewBox="0 0 300 160"
+            preserveAspectRatio="none"
+          >
+
+            <line x1="0" y1="30" x2="300" y2="30" />
+            <line x1="0" y1="65" x2="300" y2="65" />
+            <line x1="0" y1="100" x2="300" y2="100" />
+            <line x1="0" y1="135" x2="300" y2="135" />
+
+            <path
+              class="energy-area"
+              d="
+                M0 125
+                C35 120, 45 110, 75 115
+                C105 120, 120 90, 145 95
+                C170 100, 185 65, 210 70
+                C235 75, 255 50, 275 55
+                C290 58, 295 45, 300 40
+                L300 160
+                L0 160
+                Z
+              "
+            />
+
+            <path
+              class="energy-line"
+              d="
+                M0 125
+                C35 120, 45 110, 75 115
+                C105 120, 120 90, 145 95
+                C170 100, 185 65, 210 70
+                C235 75, 255 50, 275 55
+                C290 58, 295 45, 300 40
+              "
+            />
+
+          </svg>
+
+          <div class="chart-labels">
+            <span>0h</span>
+            <span>12h</span>
+            <span>24h</span>
+            <span>36h</span>
+            <span>48h</span>
+          </div>
+
+        </div>
+
+        <div class="energy-info">
+
+          <span>Recovery</span>
+
+          <strong>68%</strong>
+
+        </div>
+
+      </aside>
+
+    </section>
+
+  </main>
+
+
+  <!-- JS global -->
+  <script src="../../assets/js/global.js"></script>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
+    }
+  }
+  </script>
+
+  <!-- Three.js -->
+  <script type="module" src="./js/script.js"></script>
+
+</body>
+</html>

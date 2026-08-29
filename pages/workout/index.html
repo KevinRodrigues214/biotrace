@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>BioTrace — Workout</title>
+
+
+    <!-- =========================================
+         GLOBAL CSS
+    ========================================== -->
+
+    <link
+        rel="stylesheet"
+        href="../../assets/css/global.css"
+    >
+
+
+    <!-- =========================================
+         WORKOUT CSS
+    ========================================== -->
+
+    <link
+        rel="stylesheet"
+        href="./css/style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================================
+         HEADER
+         Já existe no projeto
+    ========================================== -->
+
+    <div id="header-placeholder"></div>
+
+
+
+    <!-- =========================================
+         WORKOUT PAGE
+    ========================================== -->
+
+    <main class="workout-page">
+
+
+        <!-- =====================================
+             MAIN WORKOUT CONTAINER
+        ====================================== -->
+
+        <section class="workout-container">
+
+
+            <!-- =================================
+                 WEEKLY CALENDAR
+            ================================== -->
+
+            <div class="workout-calendar">
+
+
+                <!-- MONDAY -->
+
+                <div
+                    class="calendar-day completed"
+                    data-day="monday"
+                >
+
+                    <div class="day-progress"></div>
+
+                    <span class="day-name">
+                        Mon
+                    </span>
+
+                </div>
+
+
+
+                <!-- TUESDAY -->
+
+                <div
+                    class="calendar-day active"
+                    data-day="tuesday"
+                >
+
+                    <div class="today-label">
+                        Today
+                    </div>
+
+                    <div class="day-progress"></div>
+
+                    <span class="day-name">
+                        Tue
+                    </span>
+
+                </div>
+
+
+
+                <!-- WEDNESDAY -->
+
+                <div
+                    class="calendar-day"
+                    data-day="wednesday"
+                >
+
+                    <div class="day-progress"></div>
+
+                    <span class="day-name">
+                        Wed
+                    </span>
+
+                </div>
+
+
+
+                <!-- THURSDAY -->
+
+                <div
+                    class="calendar-day"
+                    data-day="thursday"
+                >
+
+                    <div class="day-progress"></div>
+
+                    <span class="day-name">
+                        Thu
+                    </span>
+
+                </div>
+
+
+
+                <!-- FRIDAY -->
+
+                <div
+                    class="calendar-day"
+                    data-day="friday"
+                >
+
+                    <div class="day-progress"></div>
+
+                    <span class="day-name">
+                        Fri
+                    </span>
+
+                </div>
+
+
+
+                <!-- SATURDAY -->
+
+                <div
+                    class="calendar-day"
+                    data-day="saturday"
+                >
+
+                    <div class="day-progress"></div>
+
+                    <span class="day-name">
+                        Sat
+                    </span>
+
+                </div>
+
+
+
+                <!-- SUNDAY -->
+
+                <div
+                    class="calendar-day"
+                    data-day="sunday"
+                >
+
+                    <div class="day-progress"></div>
+
+                    <span class="day-name">
+                        Sun
+                    </span>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- =================================
+                 TODAY'S WORKOUT
+            ================================== -->
+
+            <section class="workout-card">
+
+
+                <!-- WORKOUT HEADER -->
+
+                <div class="workout-card-header">
+
+
+                    <div>
+
+                        <span class="workout-label">
+                            TODAY'S WORKOUT
+                        </span>
+
+
+                        <h1>
+                            Chest &amp; Triceps
+                        </h1>
+
+                    </div>
+
+
+
+                    <!-- OPTIONS -->
+
+                    <button
+                        class="workout-options"
+                        type="button"
+                        aria-label="Workout options"
+                    >
+
+                        <span></span>
+                        <span></span>
+                        <span></span>
+
+                    </button>
+
+
+                </div>
+
+
+
+                <!-- =================================
+                     EXERCISES
+                ================================== -->
+
+                <div class="exercise-list">
+
+
+                    <!-- =================================
+                         EXERCISE 1
+                    ================================== -->
+
+                    <article
+                        class="exercise-item completed"
+                        data-exercise="bench-press"
+                    >
+
+
+                        <label class="exercise-checkbox">
+
+                            <input
+                                type="checkbox"
+                                checked
+                            >
+
+                            <span class="checkmark"></span>
+
+                        </label>
+
+
+
+                        <div class="exercise-info">
+
+                            <span class="exercise-name">
+                                Bench Press
+                            </span>
+
+
+                            <span class="exercise-target">
+                                4 × 10
+                            </span>
+
+                        </div>
+
+
+
+                        <div class="exercise-stats">
+
+                            <span>
+                                3 Sets
+                            </span>
+
+                            <span>
+                                0 Reps
+                            </span>
+
+                        </div>
+
+
+                    </article>
+
+
+
+                    <!-- =================================
+                         EXERCISE 2
+                    ================================== -->
+
+                    <article
+                        class="exercise-item completed"
+                        data-exercise="tricep-pushdowns"
+                    >
+
+
+                        <label class="exercise-checkbox">
+
+                            <input
+                                type="checkbox"
+                                checked
+                            >
+
+                            <span class="checkmark"></span>
+
+                        </label>
+
+
+
+                        <div class="exercise-info">
+
+                            <span class="exercise-name">
+                                Tricep Pushdowns
+                            </span>
+
+
+                            <span class="exercise-target">
+                                3 × 12
+                            </span>
+
+                        </div>
+
+
+
+                        <div class="exercise-stats">
+
+                            <span>
+                                3 Sets
+                            </span>
+
+                            <span>
+                                6 Reps
+                            </span>
+
+                        </div>
+
+
+                    </article>
+
+
+
+                    <!-- =================================
+                         EXERCISE 3
+                    ================================== -->
+
+                    <article
+                        class="exercise-item"
+                        data-exercise="incline-dumbbell-press"
+                    >
+
+
+                        <label class="exercise-checkbox">
+
+                            <input
+                                type="checkbox"
+                            >
+
+                            <span class="checkmark"></span>
+
+                        </label>
+
+
+
+                        <div class="exercise-info">
+
+                            <span class="exercise-name">
+                                Incline Dumbbell Press
+                            </span>
+
+
+                            <span class="exercise-target">
+                                3 × 10
+                            </span>
+
+                        </div>
+
+
+
+                        <div class="exercise-stats">
+
+                            <span>
+                                3 Sets
+                            </span>
+
+                            <span>
+                                4 Reps
+                            </span>
+
+                        </div>
+
+
+                    </article>
+
+
+                </div>
+
+
+
+                <!-- =================================
+                     WORKOUT ACTIONS
+                ================================== -->
+
+                <div class="workout-actions">
+
+
+                    <button
+                        class="add-exercise-button"
+                        type="button"
+                        id="addExerciseButton"
+                    >
+
+                        <span class="button-plus">
+                            +
+                        </span>
+
+                        <span>
+                            Add Exercise
+                        </span>
+
+                    </button>
+
+
+
+                    <button
+                        class="complete-workout-button"
+                        type="button"
+                        id="completeWorkoutButton"
+                    >
+
+                        Complete Workout
+
+                    </button>
+
+
+                </div>
+
+
+            </section>
+
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- =========================================
+         GLOBAL JS
+    ========================================== -->
+
+    <script src="../../assets/js/global.js"></script>
+
+
+    <!-- =========================================
+         WORKOUT JS
+    ========================================== -->
+
+    <script src="./js/script.js"></script>
+
+
+</body>
+
+</html>
