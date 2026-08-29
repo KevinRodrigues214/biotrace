@@ -1,4 +1,4 @@
-BioTrace
+BioTrace(IN PROGRESS...)
 
 A workout platform featuring a 3D hologram for personalized body visualization, nutrition tracking, workout history, and social features — all in one place, eliminating the need for external apps like MyFitnessPal.
 
