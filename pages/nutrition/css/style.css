@@ -1251,7 +1251,7 @@
 .meals-page {
 
   position: relative;
-
+  margin-top: 40px;
   z-index: 2;
 
   transition:
@@ -1278,7 +1278,7 @@
   position: absolute;
 
   z-index: 3;
-
+margin-top: 40px;
   inset: 0;
 
   width: 100%;

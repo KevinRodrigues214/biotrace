@@ -31,7 +31,7 @@
         rel="stylesheet"
         href="./css/style.css"
     >
-
+    <link rel="stylesheet" href="./css/style.css">
 </head>
 
 
@@ -64,11 +64,18 @@
             <!-- =================================
                  WEEKLY CALENDAR
             ================================== -->
+<h3 class="calendar-month-title" id="calendarMonthTitle">Workout in Month</h3>
 
-            <div class="workout-calendar">
+<div class="calendar-carousel">
 
+    <button class="calendar-nav calendar-nav-left" id="calendarPrev" aria-label="Previous week">←</button>
 
-                <!-- MONDAY -->
+    <div class="workout-calendar" id="workoutCalendar">
+        <!-- mantém as 7 divs .calendar-day exatamente como estão,
+             só remova a classe "completed" da Segunda e a classe
+             "active" + a <div class="today-label">Today</div> da Terça,
+             o JS recalcula tudo sozinho -->
+               <!-- MONDAY -->
 
                 <div
                     class="calendar-day completed"
@@ -188,9 +195,17 @@
                     </span>
 
                 </div>
+    </div>
+
+    <button class="calendar-nav calendar-nav-right" id="calendarNext" aria-label="Next week">→</button>
+
+</div>
+            
+
+              
 
 
-            </div>
+            
 
 
 
@@ -244,173 +259,8 @@
                      EXERCISES
                 ================================== -->
 
-                <div class="exercise-list">
-
-
-                    <!-- =================================
-                         EXERCISE 1
-                    ================================== -->
-
-                    <article
-                        class="exercise-item completed"
-                        data-exercise="bench-press"
-                    >
-
-
-                        <label class="exercise-checkbox">
-
-                            <input
-                                type="checkbox"
-                                checked
-                            >
-
-                            <span class="checkmark"></span>
-
-                        </label>
-
-
-
-                        <div class="exercise-info">
-
-                            <span class="exercise-name">
-                                Bench Press
-                            </span>
-
-
-                            <span class="exercise-target">
-                                4 × 10
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="exercise-stats">
-
-                            <span>
-                                3 Sets
-                            </span>
-
-                            <span>
-                                0 Reps
-                            </span>
-
-                        </div>
-
-
-                    </article>
-
-
-
-                    <!-- =================================
-                         EXERCISE 2
-                    ================================== -->
-
-                    <article
-                        class="exercise-item completed"
-                        data-exercise="tricep-pushdowns"
-                    >
-
-
-                        <label class="exercise-checkbox">
-
-                            <input
-                                type="checkbox"
-                                checked
-                            >
-
-                            <span class="checkmark"></span>
-
-                        </label>
-
-
-
-                        <div class="exercise-info">
-
-                            <span class="exercise-name">
-                                Tricep Pushdowns
-                            </span>
-
-
-                            <span class="exercise-target">
-                                3 × 12
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="exercise-stats">
-
-                            <span>
-                                3 Sets
-                            </span>
-
-                            <span>
-                                6 Reps
-                            </span>
-
-                        </div>
-
-
-                    </article>
-
-
-
-                    <!-- =================================
-                         EXERCISE 3
-                    ================================== -->
-
-                    <article
-                        class="exercise-item"
-                        data-exercise="incline-dumbbell-press"
-                    >
-
-
-                        <label class="exercise-checkbox">
-
-                            <input
-                                type="checkbox"
-                            >
-
-                            <span class="checkmark"></span>
-
-                        </label>
-
-
-
-                        <div class="exercise-info">
-
-                            <span class="exercise-name">
-                                Incline Dumbbell Press
-                            </span>
-
-
-                            <span class="exercise-target">
-                                3 × 10
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="exercise-stats">
-
-                            <span>
-                                3 Sets
-                            </span>
-
-                            <span>
-                                4 Reps
-                            </span>
-
-                        </div>
-
-
-                    </article>
-
-
-                </div>
+               <div class="exercise-list" id="todayExerciseList">
+</div>
 
 
 
@@ -468,18 +318,23 @@
 
 <section class="workout-selector">
     <div class="workout-gate">
-    
+    <div class="gate-left"></div>
+  <div class="gate-right"></div>
   </div>
-<div class="selector-page">
+  <div class="workout-stage">
 
-    <div class="selector-header">
+    <!-- CONTEÚDO ATUAL (painel + carrossel) -->
+    <div class="workout-content">
+
+<div class="selector-page"></div>
+ <div class="selector-header">
 
       <span class="selector-label">
         Workout selector
       </span>
 
       <h2>
-        Your Workouts
+        Create your own workouts
       </h2>
 
       <p>
@@ -489,7 +344,7 @@
 
     </div>
 
-  </div>
+
 
   <div class="category-carousel">
 
@@ -498,74 +353,249 @@
     <div class="category-track">
 
       <!-- PUSH -->
-      <article class="category-panel" data-category="push">
-        <span class="category-panel-label">Push</span>
+<article class="category-panel" data-category="push">
+    <span class="category-panel-label">Push</span>
 
-        <div class="exercise-carousel">
-          <button class="exercise-nav exercise-nav-left">‹</button>
-          <div class="exercise-track">
-            <article class="exercise-card">Bench Press</article>
-            <article class="exercise-card">Shoulder Press</article>
-            <article class="exercise-card">Dips</article>
-            <article class="exercise-card">Lateral Raise</article>
-          </div>
-          <button class="exercise-nav exercise-nav-right">›</button>
+    <div class="exercise-carousel">
+        <button class="exercise-nav exercise-nav-left">‹</button>
+        <div class="exercise-track">
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
         </div>
-      </article>
+        <button class="exercise-nav exercise-nav-right">›</button>
+    </div>
+</article>
 
-      <!-- PULL -->
-      <article class="category-panel" data-category="pull">
-        <span class="category-panel-label">Pull</span>
+<!-- PULL -->
+<article class="category-panel" data-category="pull">
+    <span class="category-panel-label">Pull</span>
 
-        <div class="exercise-carousel">
-          <button class="exercise-nav exercise-nav-left">‹</button>
-          <div class="exercise-track">
-            <article class="exercise-card">Deadlift</article>
-            <article class="exercise-card">Pull-up</article>
-            <article class="exercise-card">Barbell Row</article>
-            <article class="exercise-card">Bicep Curl</article>
-          </div>
-          <button class="exercise-nav exercise-nav-right">›</button>
+    <div class="exercise-carousel">
+        <button class="exercise-nav exercise-nav-left">‹</button>
+        <div class="exercise-track">
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
         </div>
-      </article>
+        <button class="exercise-nav exercise-nav-right">›</button>
+    </div>
+</article>
 
-      <!-- LEGS -->
-      <article class="category-panel" data-category="legs">
-        <span class="category-panel-label">Legs</span>
+<!-- LEGS -->
+<article class="category-panel" data-category="legs">
+    <span class="category-panel-label">Legs</span>
 
-        <div class="exercise-carousel">
-          <button class="exercise-nav exercise-nav-left">‹</button>
-          <div class="exercise-track">
-            <article class="exercise-card">Squat</article>
-            <article class="exercise-card">Leg Press</article>
-            <article class="exercise-card">Lunges</article>
-            <article class="exercise-card">Calf Raise</article>
-          </div>
-          <button class="exercise-nav exercise-nav-right">›</button>
+    <div class="exercise-carousel">
+        <button class="exercise-nav exercise-nav-left">‹</button>
+        <div class="exercise-track">
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
         </div>
-      </article>
+        <button class="exercise-nav exercise-nav-right">›</button>
+    </div>
+</article>
 
-      <!-- CORE -->
-      <article class="category-panel" data-category="core">
-        <span class="category-panel-label">Core</span>
+<!-- CORE -->
+<article class="category-panel" data-category="core">
+    <span class="category-panel-label">Core</span>
 
-        <div class="exercise-carousel">
-          <button class="exercise-nav exercise-nav-left">‹</button>
-          <div class="exercise-track">
-            <article class="exercise-card">Plank</article>
-            <article class="exercise-card">Crunches</article>
-            <article class="exercise-card">Leg Raise</article>
-            <article class="exercise-card">Russian Twist</article>
-          </div>
-          <button class="exercise-nav exercise-nav-right">›</button>
+    <div class="exercise-carousel">
+        <button class="exercise-nav exercise-nav-left">‹</button>
+        <div class="exercise-track">
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
+            <article class="exercise-card">
+                <div class="exercise-card-icon">+</div>
+                <span class="exercise-card-title">Add Exercise</span>
+            </article>
+
         </div>
-      </article>
+        <button class="exercise-nav exercise-nav-right">›</button>
+    </div>
+</article>
 
     </div>
 
+   
     <button class="category-nav category-nav-right" aria-label="Next category">→</button>
 
   </div>
+
+    </div>  <!-- fecha .workout-content -->
+<!-- =======================================
+         FORMULÁRIO DO EXERCÍCIO
+    ======================================== -->
+
+    <div class="exercise-form-page">
+
+      <button class="exercise-form-close" id="exerciseFormClose" type="button" aria-label="Close exercise form">×</button>
+
+      <div class="exercise-form-header">
+        <span>WORKOUT</span>
+        <h2 id="exerciseFormTitle">Bench Press</h2>
+        <p>Record your exercise progress and track your performance.</p>
+      </div>
+
+
+      <div class="exercise-form-section">
+
+        <span class="exercise-form-title">EXERCISE INFORMATION</span>
+
+        <div class="exercise-form-group">
+          <label for="exerciseName">Exercise Name</label>
+          <input
+            type="text"
+            id="exerciseName"
+            placeholder="e.g. Bench Press"
+            inputmode="text"
+            maxlength="40"
+          >
+          <small class="field-error-message" aria-live="polite"></small>
+        </div>
+
+        <div class="exercise-form-row">
+
+          <div class="exercise-form-group">
+            <label for="exerciseCategory">Category</label>
+            <select id="exerciseCategory">
+              <option value="push">Push</option>
+              <option value="pull">Pull</option>
+              <option value="legs">Legs</option>
+              <option value="core">Core</option>
+            </select>
+          </div>
+
+          <div class="exercise-form-group">
+            <label for="exerciseTarget">Target</label>
+            <div class="quantity-input">
+              <input type="text" id="targetSets" placeholder="4" inputmode="numeric" pattern="[0-9]*" maxlength="3">
+              <input type="text" id="targetReps" placeholder="10" inputmode="numeric" pattern="[0-9]*" maxlength="3">
+            </div>
+            <small class="field-error-message" aria-live="polite"></small>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="exercise-form-section">
+
+        <span class="exercise-form-title">PROGRESS</span>
+
+        <div class="exercise-input-grid">
+
+          <div class="exercise-form-group">
+            <label for="completedSets">Sets</label>
+            <div class="input-with-unit">
+              <input type="text" id="completedSets" placeholder="3" inputmode="numeric" pattern="[0-9]*" maxlength="3">
+              <span>sets</span>
+            </div>
+            <small class="field-error-message" aria-live="polite"></small>
+          </div>
+
+          <div class="exercise-form-group">
+            <label for="completedReps">Reps</label>
+            <div class="input-with-unit">
+              <input type="text" id="completedReps" placeholder="0" inputmode="numeric" pattern="[0-9]*" maxlength="3">
+              <span>reps</span>
+            </div>
+            <small class="field-error-message" aria-live="polite"></small>
+          </div>
+
+          <div class="exercise-form-group">
+            <label for="exerciseWeight">Weight</label>
+            <div class="input-with-unit">
+              <input type="text" id="exerciseWeight" placeholder="60" inputmode="numeric" pattern="[0-9]*" maxlength="4">
+              <span>kg</span>
+            </div>
+            <small class="field-error-message" aria-live="polite"></small>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="exercise-form-actions">
+        <button class="exercise-cancel-button" id="exerciseFormCancel" type="button">Cancel</button>
+        <button class="exercise-save-button" id="exerciseFormSave" type="button">Save Exercise</button>
+      </div>
+
+    </div>
+
+  </div>
+
 
 </section>
 

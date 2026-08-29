@@ -88,6 +88,18 @@ body {
     box-shadow:
         0 25px 60px rgba(0, 0, 0, 0.45),
         inset 0 0 35px rgba(0, 170, 220, 0.025);
+
+    opacity: 0;
+    transform: translateY(140px) scale(0.92);
+
+    transition:
+        opacity 0.7s ease,
+        transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.workout-container.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
 }
 
 
@@ -125,6 +137,18 @@ body {
     box-shadow:
         0 0 18px rgba(0, 210, 255, 0.05),
         inset 0 0 25px rgba(0, 0, 0, 0.2);
+
+    opacity: 0;
+    transform: translateX(-160px) scale(0.94);
+
+    transition:
+        opacity 0.6s ease,
+        transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.workout-calendar.is-visible {
+    opacity: 1;
+    transform: translateX(0) scale(1);
 }
 
 
@@ -286,7 +310,7 @@ body {
     width: 78%;
 
     margin: 0 auto;
-
+    margin-top: 30px;
     padding: 23px 20px 24px;
 
     border-radius: 12px;
@@ -306,6 +330,18 @@ body {
         inset 0 0 25px rgba(0, 0, 0, 0.15);
 
     overflow: visible;
+
+    opacity: 0;
+    transform: translateX(160px) scale(0.94);
+
+    transition:
+        opacity 0.6s ease,
+        transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.workout-card.is-visible {
+    opacity: 1;
+    transform: translateX(0) scale(1);
 }
 
 
@@ -910,75 +946,21 @@ body {
         padding: 0 8px;
     }
 
-}/* =========================================================
-   ANIMAÇÃO DE ENTRADA — CONTAINER (vem de baixo)
-========================================================= */
-
-.workout-container {
-    opacity: 0;
-    transform: translateY(140px) scale(0.92);
-
-    transition:
-        opacity 0.7s ease,
-        transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.workout-container.is-visible {
-    opacity: 1;
-    transform: translateY(0) scale(1);
 }
 
 
 /* =========================================================
-   ANIMAÇÃO DE ENTRADA — CALENDAR (vem da esquerda)
-========================================================= */
-
-.workout-calendar {
-    opacity: 0;
-    transform: translateX(-160px) scale(0.94);
-
-    transition:
-        opacity 0.6s ease,
-        transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.workout-calendar.is-visible {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-}
-
-
-/* =========================================================
-   ANIMAÇÃO DE ENTRADA — CARD (vem da direita)
-========================================================= */
-
-.workout-card {
-    opacity: 0;
-    transform: translateX(160px) scale(0.94);
-
-    transition:
-        opacity 0.6s ease,
-        transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.workout-card.is-visible {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-}/* =========================================================
    SEÇÃO 2 — WORKOUT SELECTOR
 ========================================================= */
 
 .workout-selector {
-        position: relative;
-    width: 100%;
-    min-height: 100vh;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    /* fundo azul escuro sólido, cobre a foto do body */
-    background-color: #07101c;
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;   /* era center */
+  justify-content: center;
+  background-color: #07101c;
 }
 .workout-selector-placeholder {
     color: rgba(232, 238, 245, 0.4);
@@ -987,29 +969,12 @@ body {
 .selector-page {
   position: absolute;
   inset: 40px;
-  z-index: 0;
-
-  padding: 70px;
-
-  background:
-    linear-gradient(
-      135deg,
-      rgba(15, 35, 55, 0.98),
-      rgba(7, 20, 34, 0.98)
-    );
-
-  border:
-    1px solid
-    rgba(80, 160, 255, 0.25);
-
-  border-radius:
-    4px 20px 20px 4px;
-
-  box-shadow:
-    0 40px 100px
-    rgba(0, 0, 0, 0.55),
-    inset 8px 0 25px
-    rgba(0, 0, 0, 0.25);
+  z-index: 0;   /* só o fundo visual agora */
+ margin-top: 40px;
+  background: linear-gradient(135deg, rgba(15, 35, 55, 0.98), rgba(7, 20, 34, 0.98));
+  border: 1px solid rgba(80, 160, 255, 0.25);
+  border-radius: 4px 20px 20px 4px;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55), inset 8px 0 25px rgba(0, 0, 0, 0.25);
 }
 /* lombada */
 .selector-page::before {
@@ -1048,8 +1013,14 @@ body {
 }
 
 .selector-header {
-  position: relative;
-  z-index: 2;
+  position: absolute;
+  inset: 40px;
+  z-index: 5;   /* acima de tudo, inclusive dos cards do carrossel */
+  padding: 70px;
+  pointer-events: none;   /* deixa clique passar direto pros cards por baixo */
+
+  display: flex;
+  flex-direction: column;
   max-width: 600px;
 }
 
@@ -1073,13 +1044,66 @@ body {
 
 .selector-header p {
   font-size: 15px;
-  margin-top: 400px;
+
   line-height: 1.7;
   color: var(--color-text-muted);
+  margin-top: auto;
 }
 
 
+/* =========================================
+   PORTÃO — 2 METADES DA MESMA IMAGEM
+========================================= */
 
+.workout-gate {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.gate-left,
+.gate-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+
+  background-image:
+    url('../../../assets/images/background-5_1.png');
+
+  /* a imagem fica com o dobro da largura da metade,
+     ou seja, do tamanho da seção inteira */
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+
+  transition:
+    transform 0.9s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* metade esquerda mostra a parte esquerda da imagem */
+.gate-left {
+  left: 0;
+  background-position: left top;
+}
+
+/* metade direita mostra a parte direita da imagem */
+.gate-right {
+  right: 0;
+  background-position: right top;
+}
+
+/* =========================================
+   PORTÃO ABERTO — CADA METADE PRO SEU LADO
+========================================= */
+
+.workout-selector.workout-open .gate-left {
+  transform: translateX(-100%);
+}
+
+.workout-selector.workout-open .gate-right {
+  transform: translateX(100%);
+}
 /* =========================================================
    NÍVEL DE DENTRO — EXERCISE CAROUSEL (o "sistema solar" 3D)
 ========================================================= */
@@ -1114,9 +1138,12 @@ body {
     padding: 24px;
 
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 12px;
     text-align: center;
+    cursor: pointer;
 
     font-size: 18px;
     font-weight: 700;
@@ -1145,6 +1172,67 @@ body {
         filter 0.6s ease;
 }
 
+/* =========================================
+   EXERCISE CARD — ESTADO VAZIO
+========================================= */
+
+.exercise-card-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  border: 1px solid rgba(76, 226, 235, 0.35);
+
+  color: rgba(120, 220, 235, 0.85);
+  font-size: 24px;
+  font-weight: 300;
+}
+
+.exercise-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(210, 220, 230, 0.75);
+}
+
+
+/* =========================================
+   EXERCISE CARD — ESTADO PREENCHIDO
+========================================= */
+
+.exercise-card.filled {
+  gap: 10px;
+}
+
+.exercise-card-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #eef3f6;
+}
+
+.exercise-card-target {
+  font-size: 14px;
+  color: rgba(120, 220, 235, 0.85);
+}
+
+.exercise-card-stats {
+  font-size: 13px;
+  color: rgba(210, 220, 230, 0.65);
+}
+
+
+/* =========================================
+   CATEGORY TRAVADA NO FORMULÁRIO
+========================================= */
+
+.exercise-form-group select:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  background: rgba(20, 40, 60, 0.04);
+}
 
 /* =========================================================
    SETAS DO EXERCISE CAROUSEL (nível de dentro)
@@ -1266,3 +1354,639 @@ body {
 
 .category-nav-left { left: 20px; }
 .category-nav-right { right: 20px; }
+
+
+/* =========================================
+   WORKOUT STAGE
+========================================= */
+
+.workout-stage {
+  position: relative;
+  width: 100%;
+  min-height: 650px;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.workout-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;   /* essencial — sem isso o painel encolhe */
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.55s ease;
+}
+
+
+/* =========================================
+   EXERCISE FORM PAGE
+========================================= */
+
+.exercise-form-page {
+  position: absolute;
+  z-index: 3;
+  inset: 10%;              /* era inset: 0 — agora 30% de recuo em cada lado */
+  width: auto;              /* remove o 100% fixo, deixa o inset controlar */
+  min-height: 0;             /* remove o min-height: 650px fixo */
+  padding: 55px 70px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  border: 1px solid rgba(20, 40, 60, 0.12);
+  border-radius: 4px 20px 20px 4px;
+
+  background: #ffffff;
+  color: #152330;
+
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.30);
+
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(30px);   /* ajustei a entrada pra um efeito mais sutil, já que não é mais full-screen */
+
+  transition:
+    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s ease;
+}
+
+
+/* =========================================
+   FORM ABERTO
+========================================= */
+
+.workout-stage.form-open .workout-content {
+  transform: translateX(-110%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.workout-stage.form-open .exercise-form-page {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+.exercise-form-header {
+  margin-bottom: 32px;
+}
+
+.exercise-form-header span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #4ca6df;
+}
+
+.exercise-form-header h2 {
+  margin: 0 0 8px;
+  font-size: 36px;
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+
+.exercise-form-header p {
+  margin: 0;
+  font-size: 14px;
+  color: #758391;
+}
+
+
+/* =========================================
+   CLOSE
+========================================= */
+
+.exercise-form-close {
+  position: absolute;
+  top: 22px;
+  right: 25px;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(20, 40, 60, 0.06);
+  color: #344453;
+  font-size: 24px;
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.exercise-form-close:hover {
+  transform: rotate(90deg);
+  background: rgba(20, 40, 60, 0.12);
+}
+
+
+/* =========================================
+   FORM SECTION
+========================================= */
+
+.exercise-form-section {
+  margin-bottom: 28px;
+}
+
+.exercise-form-title {
+  display: block;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(20, 40, 60, 0.10);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #758391;
+}
+
+
+/* =========================================
+   FORM FIELDS
+========================================= */
+
+.exercise-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+.exercise-form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #344453;
+}
+
+.exercise-form-group input,
+.exercise-form-group select {
+  width: 100%;
+  height: 44px;
+  padding: 0 13px;
+  box-sizing: border-box;
+  border: 1px solid rgba(20, 40, 60, 0.15);
+  border-radius: 9px;
+  outline: none;
+  background: #f8fafc;
+  color: #172330;
+  font-family: var(--font-body);
+  font-size: 13px;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.exercise-form-group input:focus,
+.exercise-form-group select:focus {
+  border-color: rgba(76, 166, 223, 0.65);
+  box-shadow: 0 0 0 3px rgba(76, 166, 223, 0.10);
+}
+
+.exercise-form-group.is-invalid input,
+.exercise-form-group.is-invalid select {
+  border-color: rgba(220, 53, 69, 0.9);
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12);
+}
+
+.field-error-message {
+  min-height: 14px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: #d32f2f;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.field-error-message.visible {
+  opacity: 1;
+}
+
+
+/* =========================================
+   ROW / GRID
+========================================= */
+
+.exercise-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.exercise-input-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.exercise-input-grid .exercise-form-group {
+  margin-bottom: 0;
+}
+
+
+/* =========================================
+   UNIT LABEL
+========================================= */
+
+.input-with-unit {
+  position: relative;
+}
+
+.input-with-unit input {
+  padding-right: 45px;
+}
+
+.input-with-unit span {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: #85929d;
+}
+
+
+/* =========================================
+   TARGET (sets x reps lado a lado)
+========================================= */
+
+.quantity-input {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+
+/* =========================================
+   ACTIONS
+========================================= */
+
+.exercise-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(20, 40, 60, 0.10);
+}
+
+.exercise-cancel-button,
+.exercise-save-button {
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 9px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.exercise-cancel-button {
+  border: 1px solid rgba(20, 40, 60, 0.15);
+  background: #ffffff;
+  color: #52616e;
+}
+
+.exercise-save-button {
+  border: 1px solid rgba(76, 166, 223, 0.5);
+  background: #4ca6df;
+  color: white;
+}
+
+
+/* =========================================
+   CONFIRMAÇÃO DE SAÍDA
+========================================= */
+
+.exercise-close-confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(4, 12, 20, 0.35);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.exercise-close-confirm.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.exercise-close-confirm-box {
+  width: min(400px, calc(100% - 40px));
+  padding: 32px;
+  box-sizing: border-box;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.30);
+  text-align: center;
+
+  transform: translateY(20px) scale(0.97);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.exercise-close-confirm.active .exercise-close-confirm-box {
+  transform: translateY(0) scale(1);
+}
+
+.exercise-close-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #4ca6df;
+}
+
+.exercise-close-confirm-box h3 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.exercise-close-confirm-box p {
+  margin: 0 0 24px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #758391;
+}
+
+.exercise-close-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.exercise-stay-button,
+.exercise-leave-button {
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 9px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.exercise-stay-button {
+  border: 1px solid rgba(20, 40, 60, 0.15);
+  background: white;
+  color: #52616e;
+}
+
+.exercise-leave-button {
+  border: none;
+  background: #4ca6df;
+  color: white;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 768px) {
+
+  .workout-stage {
+    min-height: 600px;
+  }
+
+  .exercise-form-page {
+    min-height: 600px;
+    padding: 40px 28px;
+  }
+
+  .exercise-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .exercise-input-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+}
+
+@media (max-width: 480px) {
+
+  .exercise-input-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+/* =========================================================
+   BOTÃO "SAVE TO TODAY" NO EXERCISE CARD (carrossel)
+========================================================= */
+
+.exercise-card-actions {
+    margin-top: 10px;
+}
+
+.exercise-card-save {
+    padding: 8px 16px;
+    border-radius: 16px;
+
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+
+    cursor: pointer;
+
+    border: 1px solid rgba(76, 226, 235, 0.45);
+    background: rgba(76, 226, 235, 0.14);
+    color: #d7f6f9;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.exercise-card-save:hover {
+    background: rgba(76, 226, 235, 0.28);
+    transform: translateY(-1px);
+}
+
+.exercise-card-save:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================================
+   AÇÕES DO ITEM NO TODAY'S WORKOUT (editar / remover)
+========================================================= */
+
+.exercise-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    margin-left: 12px;
+}
+
+.exercise-item-edit,
+.exercise-item-remove {
+    width: 26px;
+    height: 26px;
+
+    border-radius: 6px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 12px;
+    cursor: pointer;
+
+    border: 1px solid rgba(140, 160, 170, 0.3);
+    background: rgba(255, 255, 255, 0.04);
+    color: #d2dbe1;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.exercise-item-edit:hover {
+    border-color: rgba(95, 214, 225, 0.5);
+    background: rgba(95, 214, 225, 0.12);
+}
+
+.exercise-item-remove:hover {
+    border-color: rgba(240, 110, 100, 0.55);
+    background: rgba(240, 110, 100, 0.14);
+    color: #ffdcd8;
+}
+
+
+/* =========================================================
+   DIA CONCLUÍDO (COMPLETE WORKOUT) — VERDE
+========================================================= */
+
+.calendar-day.day-done .day-progress {
+    background: linear-gradient(90deg, #3ddc84, #2ecc71);
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.45);
+}
+
+.calendar-day.day-done .today-label {
+    background: #3ddc84;
+    color: #0c2314;
+    box-shadow: 0 0 12px rgba(46, 204, 113, 0.4);
+}
+
+.calendar-day.day-done .today-label::after {
+    background: #3ddc84;
+}
+/* =========================================================
+   DIA SELECIONADO — MARCAÇÃO EMBAIXO (oposto do "Today")
+========================================================= */
+
+.selected-label {
+    position: absolute;
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    padding: 3px 8px;
+    border-radius: 5px;
+
+    background: #8fa3ad;
+    color: #10242b;
+
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.selected-label::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -4px;
+
+    width: 7px;
+    height: 7px;
+
+    transform: translateX(-50%) rotate(45deg);
+    background: #8fa3ad;
+}
+.calendar-month-title {
+    text-align: center;
+    margin: 0 auto 14px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: rgba(232, 238, 245, 0.85);
+    text-transform: uppercase;
+}
+
+.calendar-carousel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.calendar-carousel .workout-calendar {
+    width: 100%;
+    margin: 0;
+}
+
+.calendar-nav {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: #e8eef5;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.calendar-nav:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.calendar-nav:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.day-number {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(232, 238, 245, 0.55);
+}
+
+.calendar-day.active .day-number {
+    color: #55dfe9;
+}
