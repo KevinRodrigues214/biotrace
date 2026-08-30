@@ -411,10 +411,16 @@ function openDatePickerModal(card) {
 
     rangeLabel.textContent = `${minDate.toISOString().slice(0, 10)} to ${defaultDate.toISOString().slice(0, 10)}`;
     errorLabel.textContent = '';
+    activeModal.inert = false;
     activeModal.classList.add('active');
     activeModal.setAttribute('aria-hidden', 'false');
 
     const closeModal = () => {
+        if (activeModal.contains(document.activeElement)) {
+            document.activeElement.blur();
+        }
+
+        activeModal.inert = true;
         activeModal.classList.remove('active');
         activeModal.setAttribute('aria-hidden', 'true');
     };
@@ -444,7 +450,7 @@ function openDatePickerModal(card) {
         showSaveConfirmation(`Workout saved for ${chosenDate}.`);
 
         selectedDate = chosenDate;
-        markSelected(chosenDate); 
+        window.markSelectedWorkoutDate(chosenDate);
     };
 
     cancelButton.onclick = () => closeModal();
@@ -584,6 +590,8 @@ document.addEventListener('DOMContentLoaded', () => {
             new CustomEvent('workout:dateSelected', { detail: { date: dateKey } })
         );
     }
+
+    window.markSelectedWorkoutDate = markSelected;
 
     calendar.addEventListener('click', (event) => {
         const cell = event.target.closest('.calendar-day');
