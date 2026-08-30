@@ -1,3 +1,467 @@
+const temporaryWorkoutStore = new Map();
+const dayCompletionStore = new Map();
+const confirmedWorkoutStore = new Map();
+let selectedDate = null;
+
+const exercisesByCategory = {
+    push: [
+        'Bench Press',
+        'Overhead Press',
+        'Incline Dumbbell Press',
+        'Dumbbell Lateral Raise',
+        'Triceps Pushdown'
+    ],
+    pull: [
+        'Pull-Up',
+        'Barbell Row',
+        'Lat Pulldown',
+        'Seated Cable Row',
+        'Face Pull'
+    ],
+    legs: [
+        'Back Squat',
+        'Romanian Deadlift',
+        'Leg Press',
+        'Walking Lunges',
+        'Leg Curl'
+    ],
+    core: [
+        'Plank',
+        'Hanging Leg Raise',
+        'Cable Crunch',
+        'Russian Twist',
+        'Ab Wheel Rollout'
+    ]
+};
+
+function populateExerciseOptions(category, selectedName = '') {
+    const exerciseNameSelect = document.querySelector('#exerciseName');
+
+    if (!exerciseNameSelect) {
+        return;
+    }
+
+    const exercises = exercisesByCategory[category] || [];
+    exerciseNameSelect.innerHTML = '<option value="">Select an exercise</option>';
+
+    exercises.forEach((exerciseName) => {
+        const option = document.createElement('option');
+        option.value = exerciseName;
+        option.textContent = exerciseName;
+        exerciseNameSelect.appendChild(option);
+    });
+
+    exerciseNameSelect.value = selectedName;
+}
+
+function buildTodayItemMarkup(data) {
+    const weightPart =
+        data.weight
+            ? ` · ${data.weight}kg`
+            : '';
+
+    const isChecked = Boolean(data.checked);
+
+    return `
+        <label class="exercise-checkbox">
+            <input type="checkbox" ${isChecked ? 'checked' : ''}>
+            <span class="checkmark"></span>
+        </label>
+
+        <div class="exercise-info">
+            <span class="exercise-name">${data.name}</span>
+            <span class="exercise-target">${data.targetSets || 0} × ${data.targetReps || 0}</span>
+        </div>
+
+        <div class="exercise-stats">
+            <span>${data.sets || 0} Sets</span>
+            <span>${data.reps || 0} Reps${weightPart}</span>
+        </div>
+
+        <div class="exercise-item-actions">
+            <button type="button" class="exercise-item-edit" aria-label="Edit exercise">✎</button>
+            <button type="button" class="exercise-item-remove" aria-label="Remove exercise">✕</button>
+        </div>
+    `;
+}
+
+function getSelectedDateKey() {
+    const selected = document.querySelector('.calendar-day.selected');
+    const fallback = selected && selected.dataset.date
+        ? selected.dataset.date
+        : selectedDate || null;
+
+    return fallback;
+}
+
+function getSavedWorkoutForDate(dateKey) {
+    if (!dateKey) {
+        return [];
+    }
+
+    return temporaryWorkoutStore.get(dateKey) || [];
+}
+
+function saveWorkoutForDate(dateKey, entries) {
+    if (!dateKey) {
+        return;
+    }
+
+    temporaryWorkoutStore.set(dateKey, entries);
+}
+
+function showSaveConfirmation(message) {
+    let confirmation = document.querySelector('.save-confirmation');
+
+    if (!confirmation) {
+        confirmation = document.createElement('div');
+        confirmation.className = 'save-confirmation';
+        confirmation.setAttribute('role', 'status');
+        confirmation.setAttribute('aria-live', 'polite');
+        document.body.appendChild(confirmation);
+    }
+
+    confirmation.textContent = message;
+    confirmation.classList.remove('visible');
+    requestAnimationFrame(() => confirmation.classList.add('visible'));
+
+    clearTimeout(showSaveConfirmation.timeoutId);
+    showSaveConfirmation.timeoutId = setTimeout(() => {
+        confirmation.classList.remove('visible');
+    }, 2800);
+}
+
+function copyEntries(entries) {
+    return JSON.parse(JSON.stringify(entries || []));
+}
+
+function restoreConfirmedWorkoutState(dateKey) {
+    const confirmed = confirmedWorkoutStore.get(dateKey);
+    const currentItems = temporaryWorkoutStore.get(dateKey) || confirmedWorkoutStore.get(dateKey) || [];
+
+    if (confirmed) {
+        temporaryWorkoutStore.set(dateKey, copyEntries(confirmed));
+        return;
+    }
+
+    if (currentItems.length) {
+        temporaryWorkoutStore.set(
+            dateKey,
+            currentItems.map((item) => ({
+                ...item,
+                checked: false
+            }))
+        );
+        return;
+    }
+
+    temporaryWorkoutStore.delete(dateKey);
+}
+
+function syncSelectedWorkoutList() {
+    const activeDate = getSelectedDateKey();
+
+    if (activeDate) {
+        renderWorkoutListForDate(activeDate);
+    }
+}
+
+function syncCalendarDayState(dateKey) {
+    const targetDay = Array.from(document.querySelectorAll('.calendar-day'))
+        .find((cell) => cell.dataset.date === dateKey);
+
+    if (!targetDay) {
+        return;
+    }
+
+    targetDay.classList.remove('day-done', 'day-partial');
+
+    const state = dayCompletionStore.get(dateKey);
+
+    if (state === 'day-done' || state === 'day-partial') {
+        targetDay.classList.add(state);
+    }
+}
+
+function applyCompletedWorkoutState(dateKey) {
+    const items = getSavedWorkoutForDate(dateKey);
+
+    if (!items.length) {
+        dayCompletionStore.delete(dateKey);
+        confirmedWorkoutStore.delete(dateKey);
+        temporaryWorkoutStore.delete(dateKey);
+        syncCalendarDayState(dateKey);
+        return;
+    }
+
+    const checked = items.filter((item) => item.checked).length;
+    const total = items.length;
+
+    if (checked === total) {
+        dayCompletionStore.set(dateKey, 'day-done');
+    } else if (checked > 0) {
+        dayCompletionStore.set(dateKey, 'day-partial');
+    } else {
+        dayCompletionStore.delete(dateKey);
+    }
+
+    confirmedWorkoutStore.set(dateKey, copyEntries(items));
+    temporaryWorkoutStore.set(dateKey, copyEntries(items));
+    syncCalendarDayState(dateKey);
+}
+
+function formatWorkoutTitle(items) {
+    const names = items
+        .map((item) => item && item.name ? item.name.trim() : '')
+        .filter(Boolean);
+
+    if (!names.length) {
+        return 'Workout Plan';
+    }
+
+    if (names.length === 1) {
+        return names[0];
+    }
+
+    if (names.length === 2) {
+        return `${names[0]} & ${names[1]}`;
+    }
+
+    return `${names.slice(0, -1).join(', ')}, ${names[names.length - 1]}`;
+}
+
+function updateWorkoutCardTitle(dateKey) {
+    const titleEl = document.querySelector('.workout-card-header h1');
+
+    if (!titleEl) {
+        return;
+    }
+
+    const items = getSavedWorkoutForDate(dateKey);
+    titleEl.textContent = formatWorkoutTitle(items);
+}
+
+function updateWorkoutCardLabel(dateKey) {
+    const labelEl = document.querySelector('#workoutDateLabel');
+
+    if (!labelEl || !dateKey) {
+        return;
+    }
+
+    const selected = new Date(`${dateKey}T00:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const differenceInDays = Math.round((today - selected) / (1000 * 60 * 60 * 24));
+
+    if (differenceInDays === 0) {
+        labelEl.textContent = "TODAY'S WORKOUT";
+        return;
+    }
+
+    if (differenceInDays === 1) {
+        labelEl.textContent = "YESTERDAY'S WORKOUT";
+        return;
+    }
+
+    const month = selected.toLocaleDateString('en-US', { month: 'long' }).toUpperCase();
+    labelEl.textContent = `WORKOUT FOR ${month} ${selected.getDate()}`;
+}
+
+function renderWorkoutListForDate(dateKey) {
+    const todayList = document.querySelector('#todayExerciseList');
+
+    if (!todayList) {
+        return;
+    }
+
+    const items = getSavedWorkoutForDate(dateKey);
+    todayList.innerHTML = '';
+
+    items.forEach((itemData) => {
+        const item = document.createElement('article');
+        item.className = 'exercise-item';
+        item.dataset.sourceCard = itemData.sourceCard || '';
+        item.dataset.date = dateKey;
+
+        if (itemData.checked) {
+            item.classList.add('completed');
+        }
+
+        item.innerHTML = buildTodayItemMarkup(itemData);
+        todayList.appendChild(item);
+    });
+
+    updateWorkoutCardTitle(dateKey);
+    updateWorkoutCardLabel(dateKey);
+    syncCalendarDayState(dateKey);
+}
+
+function saveCardToDate(card, dateKey) {
+    const todayList = document.querySelector('#todayExerciseList');
+
+    if (!todayList || !dateKey) {
+        return;
+    }
+
+    const data =
+        card.dataset.exerciseData
+            ? JSON.parse(card.dataset.exerciseData)
+            : null;
+
+    if (!data) {
+        return;
+    }
+
+    const items = getSavedWorkoutForDate(dateKey);
+    const cardId = card.dataset.cardId;
+    const index = items.findIndex((item) => item.sourceCard === cardId);
+
+    const previousItem = items[index] || null;
+
+    const itemData = {
+        ...data,
+        sourceCard: cardId,
+        date: dateKey,
+        checked: previousItem ? Boolean(previousItem.checked) : false
+    };
+
+    if (index >= 0) {
+        items[index] = itemData;
+    } else {
+        items.push(itemData);
+    }
+
+    saveWorkoutForDate(dateKey, items);
+
+    if (dateKey === getSelectedDateKey()) {
+        renderWorkoutListForDate(dateKey);
+    }
+
+    return true;
+}
+
+function saveCardToToday(card) {
+    const today = new Date();
+    const dateKey = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, '0'),
+        String(today.getDate()).padStart(2, '0')
+    ].join('-');
+
+    if (saveCardToDate(card, dateKey)) {
+        showSaveConfirmation('Workout saved for today.');
+    }
+}
+
+function openDatePickerModal(card) {
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+
+    const minDate = new Date(todayDate);
+    minDate.setDate(minDate.getDate() - 30);
+
+    const defaultDate = new Date(todayDate);
+    defaultDate.setDate(defaultDate.getDate() - 1);
+
+    const modal = document.querySelector('.date-picker-modal');
+
+    if (!modal) {
+        const modalMarkup = `
+            <div class="date-picker-modal" aria-hidden="true">
+                <div class="date-picker-backdrop" data-close="true"></div>
+                <div class="date-picker-panel" role="dialog" aria-modal="true" aria-labelledby="datePickerTitle">
+                    <div class="date-picker-header">
+                        <span class="date-picker-kicker">SAVE TO PAST DAY</span>
+                        <h3 id="datePickerTitle">Choose a date</h3>
+                    </div>
+
+                    <p class="date-picker-copy">
+                        Pick any day between <strong id="datePickerRange"></strong>.
+                    </p>
+
+                    <label class="date-picker-field" for="pastDateInput">
+                        <span>Workout date</span>
+                        <input id="pastDateInput" type="date" />
+                    </label>
+
+                    <p class="date-picker-error" aria-live="polite"></p>
+
+                    <div class="date-picker-actions">
+                        <button type="button" class="date-picker-cancel">Cancel</button>
+                        <button type="button" class="date-picker-confirm">Save</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalMarkup);
+    }
+
+    const activeModal = document.querySelector('.date-picker-modal');
+    const dateInput = activeModal.querySelector('#pastDateInput');
+    const rangeLabel = activeModal.querySelector('#datePickerRange');
+    const errorLabel = activeModal.querySelector('.date-picker-error');
+    const cancelButton = activeModal.querySelector('.date-picker-cancel');
+    const confirmButton = activeModal.querySelector('.date-picker-confirm');
+
+    dateInput.min = minDate.toISOString().slice(0, 10);
+    dateInput.max = defaultDate.toISOString().slice(0, 10);
+    dateInput.value = defaultDate.toISOString().slice(0, 10);
+
+    rangeLabel.textContent = `${minDate.toISOString().slice(0, 10)} to ${defaultDate.toISOString().slice(0, 10)}`;
+    errorLabel.textContent = '';
+    activeModal.classList.add('active');
+    activeModal.setAttribute('aria-hidden', 'false');
+
+    const closeModal = () => {
+        activeModal.classList.remove('active');
+        activeModal.setAttribute('aria-hidden', 'true');
+    };
+
+    const handleConfirm = () => {
+        const chosenDate = dateInput.value;
+
+        if (!chosenDate) {
+            errorLabel.textContent = 'Please choose a valid date.';
+            return;
+        }
+
+        const normalized = new Date(chosenDate + 'T00:00:00');
+        const isValidDate = !Number.isNaN(normalized.getTime());
+        const isAllowed =
+            isValidDate &&
+            normalized >= minDate &&
+            normalized < todayDate;
+
+        if (!isAllowed) {
+            errorLabel.textContent = 'Please choose a date within the last 30 days.';
+            return;
+        }
+
+        closeModal();
+        saveCardToDate(card, chosenDate);
+        showSaveConfirmation(`Workout saved for ${chosenDate}.`);
+
+        selectedDate = chosenDate;
+        markSelected(chosenDate); 
+    };
+
+    cancelButton.onclick = () => closeModal();
+    confirmButton.onclick = handleConfirm;
+
+    activeModal.querySelector('[data-close="true"]').onclick = () => closeModal();
+    dateInput.onkeydown = (event) => {
+        if (event.key === 'Enter') {
+            handleConfirm();
+        }
+    };
+}
+
+function saveCardToPreviousDay(card) {
+    openDatePickerModal(card);
+}
+
 // =========================================================
 // CALENDÁRIO — CARROSSEL DE DATAS REAIS (semana a semana)
 // =========================================================
@@ -26,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentMonday.setDate(today.getDate() - todayDow);
 
     let weekOffset = 0;
-    let selectedDate = toDateKey(today);
+    selectedDate = toDateKey(today);
 
     const MIN_WEEK_OFFSET = -4; // até 1 mês pra trás
     const MAX_WEEK_OFFSET = 0;  // não deixa ir pro futuro
@@ -59,7 +523,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             numberEl.textContent = date.getDate();
 
-            cell.classList.remove('active', 'selected');
+            cell.classList.remove('active', 'selected', 'past');
+            cell.classList.toggle('past', date < today);
 
             const oldToday = cell.querySelector('.today-label');
             if (oldToday) oldToday.remove();
@@ -82,7 +547,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 : visibleDates[0];
         }
 
+        dayCells.forEach((cell) => {
+            if (cell.dataset.date) {
+                syncCalendarDayState(cell.dataset.date);
+            }
+        });
+
         markSelected(selectedDate);
+        syncSelectedWorkoutList();
 
         if (monthTitle) {
             monthTitle.textContent = `Workout in ${monthNames[monday.getMonth()]}`;
@@ -116,8 +588,16 @@ document.addEventListener('DOMContentLoaded', () => {
     calendar.addEventListener('click', (event) => {
         const cell = event.target.closest('.calendar-day');
         if (cell && cell.dataset.date) {
-            selectedDate = cell.dataset.date;
+            const previousDate = selectedDate;
+            const nextDate = cell.dataset.date;
+
+            if (previousDate && previousDate !== nextDate) {
+                restoreConfirmedWorkoutState(previousDate);
+            }
+
+            selectedDate = nextDate;
             markSelected(selectedDate);
+            syncSelectedWorkoutList();
         }
     });
 
@@ -134,6 +614,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     renderWeek();
+    syncSelectedWorkoutList();
+
+    document.addEventListener('workout:dateSelected', (event) => {
+        const selected = event.detail && event.detail.date;
+        if (selected) {
+            renderWorkoutListForDate(selected);
+        }
+    });
 
 });
 // =========================================================
@@ -230,6 +718,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    populateExerciseOptions(
+        exerciseCategorySelect ? exerciseCategorySelect.value : 'push'
+    );
+
 
     // card que está sendo editado no momento (fonte dos dados)
     let currentCard = null;
@@ -278,100 +770,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="exercise-card-stats">${data.sets || 0} Sets · ${data.reps || 0} Reps${weightLine}</span>
             <div class="exercise-card-actions">
                 <button type="button" class="exercise-card-save">Save to Today</button>
+                <button type="button" class="exercise-card-save-past">Save to Previous Day</button>
             </div>
         `;
-    }
-
-
-    // =========================================
-    // MARKUP DE UM ITEM NO TODAY'S WORKOUT
-    // =========================================
-
-    function buildTodayItemMarkup(data) {
-
-        const weightPart =
-            data.weight
-                ? ` · ${data.weight}kg`
-                : '';
-
-        return `
-            <label class="exercise-checkbox">
-                <input type="checkbox">
-                <span class="checkmark"></span>
-            </label>
-
-            <div class="exercise-info">
-                <span class="exercise-name">${data.name}</span>
-                <span class="exercise-target">${data.targetSets || 0} × ${data.targetReps || 0}</span>
-            </div>
-
-            <div class="exercise-stats">
-                <span>${data.sets || 0} Sets</span>
-                <span>${data.reps || 0} Reps${weightPart}</span>
-            </div>
-
-            <div class="exercise-item-actions">
-                <button type="button" class="exercise-item-edit" aria-label="Edit exercise">✎</button>
-                <button type="button" class="exercise-item-remove" aria-label="Remove exercise">✕</button>
-            </div>
-        `;
-    }
-
-
-    // =========================================
-    // ENCONTRAR ITEM DO TODAY'S WORKOUT PELO CARD DE ORIGEM
-    // =========================================
-
-    function getTodayItemByCardId(cardId) {
-
-        if (!todayList) {
-            return null;
-        }
-
-        return todayList.querySelector(
-            `.exercise-item[data-source-card="${cardId}"]`
-        );
-    }
-
-
-    // =========================================
-    // SALVAR CARD -> TODAY'S WORKOUT
-    // =========================================
-
-    function saveCardToToday(card) {
-
-        if (!todayList) {
-            return;
-        }
-
-        const data =
-            card.dataset.exerciseData
-                ? JSON.parse(card.dataset.exerciseData)
-                : null;
-
-        if (!data) {
-            return;
-        }
-
-        const cardId = card.dataset.cardId;
-
-        let item = getTodayItemByCardId(cardId);
-
-        if (item) {
-
-            item.innerHTML = buildTodayItemMarkup(data);
-
-        } else {
-
-            item = document.createElement('article');
-
-            item.className = 'exercise-item';
-            item.dataset.sourceCard = cardId;
-
-            item.innerHTML = buildTodayItemMarkup(data);
-
-            todayList.appendChild(item);
-        }
     }
 
 
@@ -471,6 +872,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const previousDayBtn =
+                event.target.closest('.exercise-card-save-past');
+
+            if (previousDayBtn) {
+                event.stopPropagation();
+                saveCardToPreviousDay(card);
+                return;
+            }
+
 
             currentCard = card;
             currentTodayItem = null;
@@ -483,6 +893,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 categoryPanel
                     ? categoryPanel.dataset.category
                     : '';
+
+            populateExerciseOptions(category);
 
 
             const existingData =
@@ -509,6 +921,64 @@ document.addEventListener('DOMContentLoaded', () => {
 
     });
 
+    function askToRemoveExercise(item) {
+        const workoutCard = document.querySelector('.workout-card');
+        const confirmationHost = workoutCard || workoutStage;
+        const existing = confirmationHost.querySelector('.exercise-remove-confirm');
+
+        if (existing) {
+            return;
+        }
+
+        const confirmation = document.createElement('div');
+        confirmation.className = 'exercise-close-confirm exercise-remove-confirm';
+        confirmation.innerHTML = `
+            <div class="exercise-close-confirm-box">
+                <span class="exercise-close-label">REMOVE EXERCISE</span>
+                <h3>Remove this exercise?</h3>
+                <p>This exercise will be removed from the selected workout.</p>
+                <div class="exercise-close-actions">
+                    <button type="button" class="exercise-stay-button">Cancel</button>
+                    <button type="button" class="exercise-leave-button">Remove</button>
+                </div>
+            </div>
+        `;
+
+        confirmationHost.appendChild(confirmation);
+        requestAnimationFrame(() => confirmation.classList.add('active'));
+
+        const closeConfirmation = () => {
+            confirmation.classList.remove('active');
+            setTimeout(() => confirmation.remove(), 300);
+        };
+
+        confirmation
+            .querySelector('.exercise-stay-button')
+            .addEventListener('click', closeConfirmation);
+
+        confirmation
+            .querySelector('.exercise-leave-button')
+            .addEventListener('click', () => {
+                const dateKey = item.dataset.date || getSelectedDateKey();
+                const sourceCard = item.dataset.sourceCard;
+                const items = getSavedWorkoutForDate(dateKey)
+                    .filter((entry) => entry.sourceCard !== sourceCard);
+
+                saveWorkoutForDate(dateKey, items);
+
+                if (!items.length && dayCompletionStore.get(dateKey) === 'day-done') {
+                    dayCompletionStore.delete(dateKey);
+                }
+
+                if (confirmedWorkoutStore.has(dateKey)) {
+                    confirmedWorkoutStore.set(dateKey, copyEntries(items));
+                }
+
+                closeConfirmation();
+                renderWorkoutListForDate(dateKey);
+            });
+    }
+
 
     // =========================================
     // AÇÕES DENTRO DO TODAY'S WORKOUT
@@ -518,6 +988,29 @@ document.addEventListener('DOMContentLoaded', () => {
     if (todayList) {
 
         todayList.addEventListener('click', (event) => {
+
+            const checkbox =
+                event.target.closest('input[type="checkbox"]');
+
+            if (checkbox) {
+                const item = checkbox.closest('.exercise-item');
+
+                if (item) {
+                    const itemDate = item.dataset.date || getSelectedDateKey();
+                    const sourceCard = item.dataset.sourceCard;
+                    const items = getSavedWorkoutForDate(itemDate);
+                    const matchingIndex = items.findIndex((entry) => entry.sourceCard === sourceCard);
+
+                    if (matchingIndex >= 0) {
+                        items[matchingIndex].checked = checkbox.checked;
+                        saveWorkoutForDate(itemDate, items);
+                    }
+
+                    item.classList.toggle('completed', checkbox.checked);
+                }
+
+                return;
+            }
 
             // REMOVER
 
@@ -530,7 +1023,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     removeBtn.closest('.exercise-item');
 
                 if (item) {
-                    item.remove();
+                    askToRemoveExercise(item);
                 }
 
                 return;
@@ -582,6 +1075,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         ? categoryPanel.dataset.category
                         : '';
 
+                populateExerciseOptions(category, data.name);
+
                 fillForm(data);
 
                 if (exerciseCategorySelect && category) {
@@ -604,24 +1099,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-
-            // CHECKBOX — marca/desmarca como concluído
-
-            const checkbox =
-                event.target.closest('input[type="checkbox"]');
-
-            if (checkbox) {
-
-                const item =
-                    checkbox.closest('.exercise-item');
-
-                if (item) {
-                    item.classList.toggle(
-                        'completed',
-                        checkbox.checked
-                    );
-                }
-            }
 
         });
 
@@ -782,6 +1259,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!field) return true;
 
         const value = field.value.trim();
+        if (field.tagName === 'SELECT' && value === '') {
+            showFieldError(field, 'Please select an exercise.');
+            return false;
+        }
+
         const isValid = value === '' || /^[A-Za-zÀ-ÿ\s'-]+$/.test(value);
 
         if (!isValid) {
@@ -905,25 +1387,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     completeWorkoutButton.addEventListener('click', () => {
+        const selectedKey = getSelectedDateKey();
 
-        // só fica verde se tiver pelo menos um exercício
-        // adicionado E com o check marcado
-        const hasCheckedExercise =
-            todayList &&
-            todayList.querySelector('.exercise-item.completed');
-
-        if (!hasCheckedExercise) {
+        if (!selectedKey) {
             return;
         }
 
-        const targetDay =
-            document.querySelector('.calendar-day.selected') ||
-            document.querySelector('.calendar-day.active');
-
-        if (targetDay) {
-            targetDay.classList.add('day-done');
-        }
-
+        applyCompletedWorkoutState(selectedKey);
     });
 
 });

@@ -205,7 +205,8 @@ body {
 
 /* Completed day */
 
-.calendar-day.completed .day-progress {
+.calendar-day.completed .day-progress,
+.calendar-day.past .day-progress {
     background:
         linear-gradient(
             90deg,
@@ -230,6 +231,11 @@ body {
 
     box-shadow:
         0 0 11px rgba(38, 228, 240, 0.45);
+}
+
+.calendar-day.past .day-name,
+.calendar-day.past .day-number {
+    color: rgba(120, 220, 235, 0.9);
 }
 
 
@@ -1578,6 +1584,32 @@ body {
   opacity: 1;
 }
 
+.save-confirmation {
+  position: fixed;
+  top: 28px;
+  right: 28px;
+  z-index: 1000;
+  max-width: min(320px, calc(100vw - 40px));
+  padding: 14px 18px;
+  border: 1px solid rgba(76, 226, 235, 0.35);
+  border-radius: 9px;
+  background: rgba(20, 40, 60, 0.94);
+  box-shadow: 0 12px 28px rgba(5, 16, 27, 0.3);
+  color: #e8f8fa;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(-12px);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.save-confirmation.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 
 /* =========================================
    ROW / GRID
@@ -1764,6 +1796,147 @@ body {
   color: white;
 }
 
+/* =========================================
+   DATE PICKER MODAL
+========================================= */
+
+.date-picker-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.date-picker-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.date-picker-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 11, 18, 0.62);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.date-picker-panel {
+  position: relative;
+  z-index: 1;
+  width: min(430px, calc(100% - 28px));
+  background: linear-gradient(180deg, #0f1e2a 0%, #0d1822 100%);
+  border: 1px solid rgba(130, 176, 196, 0.28);
+  border-radius: 18px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.42);
+  padding: 26px 24px 20px;
+  transform: translateY(16px) scale(0.97);
+  transition: transform 0.3s ease;
+}
+
+.date-picker-modal.active .date-picker-panel {
+  transform: translateY(0) scale(1);
+}
+
+.date-picker-header {
+  margin-bottom: 12px;
+}
+
+.date-picker-kicker {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: #5de2ee;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+}
+
+.date-picker-header h3 {
+  color: #f2f6fa;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.date-picker-copy {
+  margin-bottom: 16px;
+  color: rgba(214, 225, 234, 0.76);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.date-picker-copy strong {
+  color: #d9f8fb;
+}
+
+.date-picker-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #dfe8f0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.date-picker-field input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  color: #0f1d2b;
+  background: white;
+  border: 1px solid rgba(130, 176, 196, 0.32);
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.date-picker-field input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(93, 226, 238, 0.2);
+}
+
+.date-picker-error {
+  min-height: 18px;
+  margin-top: 10px;
+  color: #ff8f95;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.date-picker-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.date-picker-cancel,
+.date-picker-confirm {
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+}
+
+.date-picker-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(162, 178, 189, 0.25);
+  color: #edf3f7;
+}
+
+.date-picker-confirm {
+  background: linear-gradient(180deg, #5de2ee 0%, #39c8dc 100%);
+  border: none;
+  color: #0b1b25;
+  box-shadow: 0 10px 20px rgba(57, 200, 220, 0.25);
+}
+
 
 /* =========================================
    MOBILE
@@ -1804,10 +1977,14 @@ body {
 ========================================================= */
 
 .exercise-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     margin-top: 10px;
 }
 
-.exercise-card-save {
+.exercise-card-save,
+.exercise-card-save-past {
     padding: 8px 16px;
     border-radius: 16px;
 
@@ -1826,12 +2003,14 @@ body {
         transform 0.2s ease;
 }
 
-.exercise-card-save:hover {
+.exercise-card-save:hover,
+.exercise-card-save-past:hover {
     background: rgba(76, 226, 235, 0.28);
     transform: translateY(-1px);
 }
 
-.exercise-card-save:active {
+.exercise-card-save:active,
+.exercise-card-save-past:active {
     transform: translateY(0);
 }
 
@@ -1892,14 +2071,29 @@ body {
     box-shadow: 0 0 10px rgba(46, 204, 113, 0.45);
 }
 
+.calendar-day.day-partial .day-progress {
+    background: linear-gradient(90deg, #f4c950, #f2b93b);
+    box-shadow: 0 0 10px rgba(244, 201, 80, 0.4);
+}
+
 .calendar-day.day-done .today-label {
     background: #3ddc84;
     color: #0c2314;
     box-shadow: 0 0 12px rgba(46, 204, 113, 0.4);
 }
 
+.calendar-day.day-partial .today-label {
+    background: #f4c950;
+    color: #21170a;
+    box-shadow: 0 0 12px rgba(244, 201, 80, 0.4);
+}
+
 .calendar-day.day-done .today-label::after {
     background: #3ddc84;
+}
+
+.calendar-day.day-partial .today-label::after {
+    background: #f4c950;
 }
 /* =========================================================
    DIA SELECIONADO — MARCAÇÃO EMBAIXO (oposto do "Today")

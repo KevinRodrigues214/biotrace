@@ -223,7 +223,7 @@
 
                     <div>
 
-                        <span class="workout-label">
+                        <span class="workout-label" id="workoutDateLabel">
                             TODAY'S WORKOUT
                         </span>
 
@@ -234,21 +234,6 @@
 
                     </div>
 
-
-
-                    <!-- OPTIONS -->
-
-                    <button
-                        class="workout-options"
-                        type="button"
-                        aria-label="Workout options"
-                    >
-
-                        <span></span>
-                        <span></span>
-                        <span></span>
-
-                    </button>
 
 
                 </div>
@@ -513,13 +498,9 @@
 
         <div class="exercise-form-group">
           <label for="exerciseName">Exercise Name</label>
-          <input
-            type="text"
-            id="exerciseName"
-            placeholder="e.g. Bench Press"
-            inputmode="text"
-            maxlength="40"
-          >
+                    <select id="exerciseName" required>
+                        <option value="">Select an exercise</option>
+                    </select>
           <small class="field-error-message" aria-live="polite"></small>
         </div>
 
@@ -536,7 +517,7 @@
           </div>
 
           <div class="exercise-form-group">
-            <label for="exerciseTarget">Target</label>
+            <label for="targetSets">Target</label>
             <div class="quantity-input">
               <input type="text" id="targetSets" placeholder="4" inputmode="numeric" pattern="[0-9]*" maxlength="3">
               <input type="text" id="targetReps" placeholder="10" inputmode="numeric" pattern="[0-9]*" maxlength="3">
