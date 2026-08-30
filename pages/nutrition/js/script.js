@@ -159,14 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function rotateLeft() {
 
-    order = [
-
-      order[3],
-      order[0],
-      order[1],
-      order[2]
-
-    ];
+    order = [order[3], order[0], order[1], order[2]];
 
 
     updateCarousel();
@@ -180,14 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function rotateRight() {
 
-    order = [
-
-      order[1],
-      order[2],
-      order[3],
-      order[0]
-
-    ];
+    order = [order[1], order[2], order[3], order[0]];
 
 
     updateCarousel();
@@ -450,6 +436,144 @@ function getNutritionTodayKey() {
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
   return `${today.getFullYear()}-${month}-${day}`;
+}
+
+function escapeNutritionHtml(value) {
+  return String(value).replace(/[&<>'"]/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  }[character]));
+}
+
+let nutritionGoals = null;
+
+function renderGoalsCard() {
+  const content = document.querySelector('#goalsContent');
+  if (!content) return;
+
+  if (!nutritionGoals) {
+    content.innerHTML = `
+      <button class="goals-add-button" id="goalsAddButton" type="button">
+        <span class="goals-add-icon">+</span>
+        <span>Add Your Goals</span>
+      </button>
+    `;
+
+    content.querySelector('#goalsAddButton').addEventListener('click', () => {
+      renderGoalsForm();
+    });
+    return;
+  }
+
+  content.innerHTML = `
+    <div class="goals-list">
+      <div class="goal"><span>Calories</span><strong>${nutritionGoals.calories} kcal</strong></div>
+      <div class="goal"><span>Protein</span><strong>${nutritionGoals.protein} g</strong></div>
+      <div class="goal"><span>Carbohydrates</span><strong>${nutritionGoals.carbs} g</strong></div>
+      <div class="goal"><span>Total Fat</span><strong>${nutritionGoals.fat} g</strong></div>
+    </div>
+    <div class="goals-actions">
+      <button class="goals-edit-button" id="goalsEditButton" type="button">Edit</button>
+      <button class="goals-delete-button" id="goalsDeleteButton" type="button">Delete</button>
+    </div>
+  `;
+
+  content.querySelector('#goalsEditButton').addEventListener('click', renderGoalsForm);
+  content.querySelector('#goalsDeleteButton').addEventListener('click', () => {
+    if (window.confirm('Delete your goals?')) {
+      nutritionGoals = null;
+      renderGoalsCard();
+    }
+  });
+}
+
+function renderGoalsForm() {
+  const content = document.querySelector('#goalsContent');
+  if (!content) return;
+
+  const goal = nutritionGoals || { calories: '', protein: '', carbs: '', fat: '' };
+  content.innerHTML = `
+    <form class="goals-form" id="goalsForm">
+      <div class="goals-field">
+        <label for="goalCalories">Calories (kcal)</label>
+        <input id="goalCalories" type="number" min="0" value="${goal.calories}" required>
+      </div>
+      <div class="goals-field">
+        <label for="goalProtein">Protein (g)</label>
+        <input id="goalProtein" type="number" min="0" value="${goal.protein}" required>
+      </div>
+      <div class="goals-field">
+        <label for="goalCarbs">Carbohydrates (g)</label>
+        <input id="goalCarbs" type="number" min="0" value="${goal.carbs}" required>
+      </div>
+      <div class="goals-field">
+        <label for="goalFat">Total Fat (g)</label>
+        <input id="goalFat" type="number" min="0" value="${goal.fat}" required>
+      </div>
+      <div class="goals-actions">
+        <button class="goals-save-button" type="submit">Save</button>
+      </div>
+    </form>
+  `;
+
+  content.querySelector('#goalsForm').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const fields = Array.from(content.querySelectorAll('input'));
+    const valid = fields.every((field) => /^\d+(\.\d+)?$/.test(field.value.trim()));
+
+    if (!valid) {
+      fields.forEach((field) => {
+        field.classList.toggle('goals-field-invalid', !/^\d+(\.\d+)?$/.test(field.value.trim()));
+      });
+      return;
+    }
+
+    nutritionGoals = {
+      calories: fields[0].value,
+      protein: fields[1].value,
+      carbs: fields[2].value,
+      fat: fields[3].value
+    };
+    renderGoalsCard();
+  });
+}
+
+document.addEventListener('DOMContentLoaded', renderGoalsCard);
+
+function updateMealPlan() {
+  const list = document.querySelector('#mealPlanList');
+  if (!list) return;
+
+  const meals = nutritionMealsByDate.get(getNutritionTodayKey()) || [];
+
+  if (!meals.length) {
+    list.innerHTML = '<div class="meal-plan-empty">No meals added today</div>';
+    return;
+  }
+
+  const mealTypes = {
+    breakfast: 'Breakfast',
+    lunch: 'Lunch',
+    dinner: 'Dinner',
+    snack: 'Snack'
+  };
+
+  list.innerHTML = meals.map((meal) => `
+    <div class="meal-plan-entry">
+      <div class="meal-plan-entry-info">
+        <span class="meal-plan-entry-name">${escapeNutritionHtml(meal.mealName)}</span>
+        <span class="meal-plan-entry-type">
+          ${escapeNutritionHtml(mealTypes[meal.mealType] || meal.mealType)} · ${escapeNutritionHtml(meal.mealTime)}
+        </span>
+      </div>
+      <strong class="meal-plan-entry-calories">
+        ${escapeNutritionHtml(meal.calories)} kcal
+      </strong>
+    </div>
+  `).join('');
 }
 
 function updateDailyOverview() {
@@ -1603,12 +1727,14 @@ document.addEventListener('DOMContentLoaded', () => {
     window.renderNutritionCalendarWeek();
     updateDailyOverview();
     updateLastSevenDaysOverview();
+    updateMealPlan();
   });
 
   renderMealsForDate(selectedNutritionDate);
   updateMealsDateTitle(selectedNutritionDate);
   updateDailyOverview();
   updateLastSevenDaysOverview();
+  updateMealPlan();
 
 
   // =========================================

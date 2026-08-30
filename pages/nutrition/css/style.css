@@ -724,6 +724,202 @@
 
 
 /* =========================================
+   GOAL DIRECTION CARD
+========================================= */
+
+.goal-choice-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.goal-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 13px;
+  border: 1px solid rgba(80, 180, 255, 0.2);
+  border-radius: 9px;
+  background: rgba(5, 20, 35, 0.32);
+  color: #edfdf2;
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.goal-choice:hover {
+  transform: translateY(-2px);
+  border-color: rgba(85, 223, 233, 0.65);
+  background: rgba(30, 100, 150, 0.2);
+}
+
+.goal-choice span,
+.goal-choice small {
+  display: block;
+}
+
+.goal-choice span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.goal-choice small {
+  margin-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+}
+
+.goal-chart-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(80, 180, 255, 0.15);
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.goal-chart-placeholder strong {
+  color: #55dfe9;
+  font-size: 14px;
+}
+
+
+/* =========================================
+   GOALS FORM
+========================================= */
+
+.goals-content {
+  min-height: 285px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.goals-add-button {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px dashed rgba(80, 180, 255, 0.35);
+  border-radius: 14px;
+  background: rgba(10, 30, 45, 0.3);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.goals-add-button:hover {
+  border-color: rgba(80, 180, 255, 0.75);
+  background: rgba(30, 100, 150, 0.15);
+}
+
+.goals-add-icon {
+  color: rgba(120, 200, 255, 0.9);
+  font-size: 28px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.goals-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.goals-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.goals-field label {
+  color: rgba(200, 222, 238, 0.78);
+  font-size: 11px;
+}
+
+.goals-field input {
+  width: 100%;
+  height: 36px;
+  padding: 0 9px;
+  box-sizing: border-box;
+  border: 1px solid rgba(80, 180, 255, 0.2);
+  border-radius: 7px;
+  outline: none;
+  background: rgba(5, 20, 35, 0.55);
+  color: #edfdf2;
+  font-family: var(--font-body);
+  font-size: 12px;
+}
+
+.goals-field input:focus {
+  border-color: rgba(76, 166, 223, 0.7);
+  box-shadow: 0 0 0 3px rgba(76, 166, 223, 0.1);
+}
+
+.goals-field input.goals-field-invalid {
+  border-color: rgba(220, 53, 69, 0.9);
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12);
+}
+
+.goals-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.goals-save-button,
+.goals-edit-button,
+.goals-delete-button {
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 7px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.goals-save-button,
+.goals-edit-button {
+  border: 1px solid rgba(76, 166, 223, 0.5);
+  background: #4ca6df;
+  color: white;
+}
+
+.goals-delete-button {
+  border: 1px solid rgba(220, 53, 69, 0.28);
+  background: transparent;
+  color: #e27682;
+}
+
+.goals-delete-button:hover {
+  border-color: rgba(220, 53, 69, 0.55);
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.goals-list {
+  display: grid;
+  gap: 10px;
+}
+
+.goals-list .goal {
+  padding: 8px 0;
+}
+
+
+/* =========================================
    BOTÕES DO CARROSSEL — DESKTOP
 ========================================= */
 
@@ -2305,4 +2501,73 @@ margin-top: 40px;
 .meal-delete-button:hover {
   border-color: rgba(220, 53, 69, 0.55);
   background: #ffe9eb;
+}
+
+.meal-plan-list {
+  min-height: 0;
+  max-height: 265px;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(85, 223, 233, 0.65) transparent;
+}
+
+.meal-plan-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.meal-plan-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(85, 223, 233, 0.65);
+}
+
+.meal-plan-empty {
+  padding: 34px 0;
+  color: rgba(200, 222, 238, 0.62);
+  font-size: 13px;
+  text-align: center;
+}
+
+.meal-plan-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 0;
+  border-bottom: 1px solid rgba(80, 180, 255, 0.15);
+}
+
+.meal-plan-entry:last-child {
+  border-bottom: 0;
+}
+
+.meal-plan-entry-info {
+  min-width: 0;
+}
+
+.meal-plan-entry-name,
+.meal-plan-entry-type {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meal-plan-entry-name {
+  color: #edfdf2;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.meal-plan-entry-type {
+  margin-top: 5px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.meal-plan-entry-calories {
+  flex: 0 0 auto;
+  color: #55dfe9;
+  font-size: 13px;
+  font-weight: 700;
 }
