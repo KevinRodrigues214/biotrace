@@ -1574,21 +1574,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const panels = document.querySelectorAll('.category-panel');
     const navLeft = document.querySelector('.category-nav-left');
     const navRight = document.querySelector('.category-nav-right');
+    const carouselEl = document.querySelector('.category-carousel');
 
     if (panels.length !== 4) {
         return;
     }
 
-    const positions = {
-        front: { transform: 'translate(-50%, -50%) translateZ(220px) scale(1)', zIndex: 4, opacity: 1, filter: 'brightness(1)' },
-        left:  { transform: 'translate(-50%, -50%) translateX(-440px) rotateY(50deg) scale(0.8)', zIndex: 3, opacity: 0.6, filter: 'brightness(0.6)' },
-        back:  { transform: 'translate(-50%, -50%) translateZ(-220px) scale(0.7)', zIndex: 1, opacity: 0, filter: 'brightness(0.3)' },
-        right: { transform: 'translate(-50%, -50%) translateX(440px) rotateY(-50deg) scale(0.8)', zIndex: 3, opacity: 0.6, filter: 'brightness(0.6)' }
-    };
+    function getRadius(el, varName, fallback) {
+        const raw = getComputedStyle(el).getPropertyValue(varName).trim();
+        const num = parseFloat(raw);
+        return Number.isNaN(num) ? fallback : num;
+    }
 
     let order = [0, 1, 2, 3];
 
     function updateCategoryCarousel() {
+
+        const x = getRadius(carouselEl, '--cat-x', 440);
+        const z = getRadius(carouselEl, '--cat-z', 220);
+        const sideOpacity = x === 0 ? 0.35 : 0.6;
+
+        const positions = {
+            front: { transform: `translate(-50%, -50%) translateZ(${z}px) scale(1)`, zIndex: 4, opacity: 1, filter: 'brightness(1)' },
+            left:  { transform: `translate(-50%, -50%) translateX(-${x}px) rotateY(${x ? 50 : 0}deg) scale(0.8)`, zIndex: 3, opacity: sideOpacity, filter: 'brightness(0.6)' },
+            back:  { transform: `translate(-50%, -50%) translateZ(-${z}px) scale(0.7)`, zIndex: 1, opacity: 0, filter: 'brightness(0.3)' },
+            right: { transform: `translate(-50%, -50%) translateX(${x}px) rotateY(${x ? -50 : 0}deg) scale(0.8)`, zIndex: 3, opacity: sideOpacity, filter: 'brightness(0.6)' }
+        };
+
         const positionNames = ['front', 'left', 'back', 'right'];
 
         panels.forEach((panel, index) => {
@@ -1618,6 +1630,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (navLeft) navLeft.addEventListener('click', rotateRight);
     if (navRight) navRight.addEventListener('click', rotateLeft);
 
+    window.addEventListener('resize', updateCategoryCarousel);
+
     updateCategoryCarousel();
 
 });
@@ -1631,12 +1645,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const carousels = document.querySelectorAll('.exercise-carousel');
 
-    const positions = {
-        front: { transform: 'translate(-50%, -50%) translateZ(160px) scale(1)', zIndex: 4, opacity: 1, filter: 'brightness(1)' },
-        left:  { transform: 'translate(-50%, -50%) translateX(-150px) rotateY(55deg) scale(0.85)', zIndex: 3, opacity: 0.7, filter: 'brightness(0.7)' },
-        back:  { transform: 'translate(-50%, -50%) translateZ(-160px) scale(0.8)', zIndex: 1, opacity: 0.25, filter: 'brightness(0.45)' },
-        right: { transform: 'translate(-50%, -50%) translateX(150px) rotateY(-55deg) scale(0.85)', zIndex: 3, opacity: 0.7, filter: 'brightness(0.7)' }
-    };
+    function getRadius(el, varName, fallback) {
+        const raw = getComputedStyle(el).getPropertyValue(varName).trim();
+        const num = parseFloat(raw);
+        return Number.isNaN(num) ? fallback : num;
+    }
 
     carousels.forEach((carousel) => {
 
@@ -1651,6 +1664,18 @@ document.addEventListener('DOMContentLoaded', () => {
         let order = [0, 1, 2, 3];
 
         function updateCarousel() {
+
+            const x = getRadius(carousel, '--ex-x', 150);
+            const z = getRadius(carousel, '--ex-z', 160);
+            const sideOpacity = x === 0 ? 0.45 : 0.7;
+
+            const positions = {
+                front: { transform: `translate(-50%, -50%) translateZ(${z}px) scale(1)`, zIndex: 4, opacity: 1, filter: 'brightness(1)' },
+                left:  { transform: `translate(-50%, -50%) translateX(-${x}px) rotateY(${x ? 55 : 0}deg) scale(0.85)`, zIndex: 3, opacity: sideOpacity, filter: 'brightness(0.7)' },
+                back:  { transform: `translate(-50%, -50%) translateZ(-${z}px) scale(0.8)`, zIndex: 1, opacity: 0.25, filter: 'brightness(0.45)' },
+                right: { transform: `translate(-50%, -50%) translateX(${x}px) rotateY(${x ? -55 : 0}deg) scale(0.85)`, zIndex: 3, opacity: sideOpacity, filter: 'brightness(0.7)' }
+            };
+
             const positionNames = ['front', 'left', 'back', 'right'];
 
             cards.forEach((card, index) => {
@@ -1690,6 +1715,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 rotateLeft();
             });
         }
+
+        window.addEventListener('resize', updateCarousel);
 
         updateCarousel();
 

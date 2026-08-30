@@ -59,37 +59,334 @@ padding-top: 120px;
 .hero-content.hero-content-hidden {
   opacity: 0;
   transform: translateX(-100px);
-}
-/* ===== RESPONSIVO: TABLET ===== */
-@media (max-width: 768px) {
+}/* =========================================
+   RESPONSIVE — TABLET
+========================================= */
+
+@media (max-width: 1024px) {
+
+  .hero {
+    min-height: 100vh;
+    padding: 120px 60px 60px;
+    background-position: center;
+  }
+
+  .hero-content {
+    max-width: 580px;
+  }
+
+  .hero-title {
+    font-size: 60px;
+  }
+
+  .hero-description {
+    max-width: 400px;
+    font-size: 15px;
+  }
+
   .proof-strip {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
+    grid-template-columns: 1fr 1fr;
   }
 
   .proof-col {
-    flex: 0 0 85%;
-    scroll-snap-align: center;
+    min-height: 220px;
+    padding: 36px 28px;
   }
 
-  /* esconde a barra de scroll (opcional, visual mais limpo) */
+  .proof-col--photo {
+    grid-column: span 2;
+  }
+
+}
+
+
+/* =========================================
+   RESPONSIVE — TABLET PEQUENO
+========================================= */
+
+@media (max-width: 768px) {
+
+  /* ===============================
+     HERO
+  =============================== */
+
+  .hero {
+    min-height: 100svh;
+    height: auto;
+
+    padding:
+      110px
+      32px
+      60px;
+
+    align-items: center;
+
+    background-position: center;
+  }
+
+
+  .hero-content {
+    width: 100%;
+    max-width: 560px;
+  }
+
+
+  .hero-title {
+    font-size: clamp(44px, 8vw, 56px);
+    line-height: 1.08;
+    margin-bottom: 22px;
+  }
+
+
+  .hero-description {
+    max-width: 440px;
+    font-size: 15px;
+    line-height: 1.65;
+    margin-bottom: 28px;
+  }
+
+
+  .hero-cta {
+    padding: 15px 28px;
+    font-size: 14px;
+  }
+
+
+  /* ===============================
+     PROOF STRIP
+  =============================== */
+
+  .proof-strip {
+    display: flex;
+
+    width: 100%;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    scroll-snap-type: x mandatory;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+  }
+
+
   .proof-strip::-webkit-scrollbar {
     display: none;
   }
+
+
+  .proof-col {
+    flex: 0 0 85%;
+
+    min-height: 220px;
+
+    padding: 36px 28px;
+
+    box-sizing: border-box;
+
+    scroll-snap-align: center;
+  }
+
+
+  .proof-col--photo {
+    grid-column: auto;
+  }
+
+
+  .proof-col--dark {
+    flex-direction: row;
+
+    align-items: center;
+
+    gap: 18px;
+  }
+
+
+  .proof-avatars img {
+    width: 40px;
+    height: 40px;
+  }
+
+
+  .proof-stat strong {
+    font-size: 22px;
+  }
+
 }
 
-/* ===== RESPONSIVO: MOBILE PEQUENO ===== */
-@media (max-width: 480px) {
-  .hero-title {
-    font-size: 34px;
-  }
+
+/* =========================================
+   RESPONSIVE — MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+  /* ===============================
+     HERO
+  =============================== */
 
   .hero {
-    padding: 0 24px;
-    padding-top: 100px;
+    min-height: 100svh;
+
+    padding:
+      100px
+      24px
+      48px;
+
+    align-items: center;
   }
+
+
+  .hero-content {
+    max-width: 100%;
+  }
+
+
+  .hero-title {
+    font-size: clamp(38px, 11vw, 48px);
+    line-height: 1.06;
+
+    margin-bottom: 20px;
+  }
+
+
+  .hero-description {
+    max-width: 100%;
+
+    font-size: 14px;
+    line-height: 1.65;
+
+    margin-bottom: 26px;
+  }
+
+
+  .hero-cta {
+    padding: 14px 26px;
+    font-size: 13px;
+  }
+
+
+  /* ===============================
+     PROOF
+  =============================== */
+
+  .proof-col {
+    flex: 0 0 88%;
+
+    min-height: 210px;
+
+    padding: 32px 24px;
+  }
+
+
+  .proof-col--photo h3 {
+    font-size: 20px;
+    line-height: 1.3;
+  }
+
+
+  .proof-link {
+    font-size: 13px;
+  }
+
+
+  .proof-col--dark {
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    justify-content: center;
+
+    gap: 16px;
+  }
+
+
+  .proof-avatars img {
+    width: 38px;
+    height: 38px;
+  }
+
+
+  .proof-stat strong {
+    font-size: 22px;
+  }
+
+
+  .proof-stat span {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+}
+
+
+/* =========================================
+   RESPONSIVE — MOBILE PEQUENO
+========================================= */
+
+@media (max-width: 400px) {
+
+  .hero {
+    padding:
+      95px
+      20px
+      40px;
+  }
+
+
+  .hero-title {
+    font-size: 36px;
+  }
+
+
+  .hero-description {
+    font-size: 13px;
+  }
+
+
+  .hero-cta {
+    width: 100%;
+    max-width: 220px;
+  }
+
+
+  .proof-col {
+    flex-basis: 90%;
+    padding: 28px 22px;
+  }
+
+}
+
+
+/* =========================================
+   LANDSCAPE — CELULAR
+========================================= */
+
+@media (max-height: 600px) and (orientation: landscape) {
+
+  .hero {
+    min-height: auto;
+
+    padding:
+      110px
+      32px
+      60px;
+
+    align-items: flex-start;
+  }
+
+
+  .hero-title {
+    font-size: 42px;
+  }
+
+
+  .hero-description {
+    max-width: 500px;
+  }
+
 }
 /* ===== PROOF STRIP ===== */
 .proof-strip {

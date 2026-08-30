@@ -2184,3 +2184,104 @@ body {
 .calendar-day.active .day-number {
     color: #55dfe9;
 }
+
+/* =========================================================
+   CARROSSEL RESPONSIVO — variáveis de órbita
+========================================================= */
+
+.category-carousel {
+    --cat-x: 440px;
+    --cat-z: 220px;
+}
+
+.exercise-carousel {
+    --ex-x: 150px;
+    --ex-z: 160px;
+}
+
+@media (max-width: 900px) {
+
+    .category-carousel {
+        height: 480px;
+        --cat-x: 260px;
+        --cat-z: 150px;
+        perspective: 1100px;
+    }
+
+    .category-track { width: 320px; height: 380px; }
+
+    .category-panel {
+        width: 280px;
+        height: 340px;
+        padding: 16px;
+    }
+
+    .category-panel-label { font-size: 13px; }
+
+    .exercise-carousel {
+        height: 300px;
+        gap: 0;
+        --ex-x: 95px;
+        --ex-z: 105px;
+        perspective: 900px;
+    }
+
+    .exercise-track { width: 180px; height: 220px; }
+
+    .exercise-card {
+        width: 160px;
+        height: 200px;
+        padding: 16px;
+        font-size: 15px;
+    }
+
+    .selector-header {
+        padding: 30px;
+        max-width: 100%;
+    }
+
+    .selector-header h2 { font-size: 26px; }
+    .selector-header p  { font-size: 13px; }
+
+    .category-nav-left  { left: 6px; }
+    .category-nav-right { right: 6px; }
+}
+
+@media (max-width: 600px) {
+
+    /* órbita zerada = cards ficam empilhados, só fade/scale,
+       sem estourar a largura da tela */
+
+    .category-carousel {
+        height: 380px;
+        --cat-x: 0px;
+        --cat-z: 0px;
+        perspective: none;
+    }
+
+    .category-track { width: 240px; height: 300px; }
+    .category-panel { width: 220px; height: 280px; }
+
+    .exercise-carousel {
+        height: 240px;
+        --ex-x: 0px;
+        --ex-z: 0px;
+        perspective: none;
+    }
+
+    .exercise-track { width: 160px; height: 200px; }
+    .exercise-card  { width: 150px; height: 190px; }
+
+    .workout-stage { min-height: 480px; }
+
+    .category-nav,
+    .exercise-nav {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .calendar-nav { width: 28px; height: 28px; }
+
+    .calendar-month-title { font-size: 13px; }
+}
