@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioTrace</title>
+  <link rel="stylesheet" href="../../assets/css/global.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <div id="header-placeholder"></div>
+
+  <section class="hero">
+
+    <div class="profile-panel">
+
+      <div class="profile-header">
+        <span>PROFILE</span>
+        <h1>Your Profile</h1>
+        <p>Set your personal information to personalize your nutrition goals.</p>
+      </div>
+
+      <form class="profile-form" id="profileForm">
+
+        <div class="profile-section">
+          <span class="profile-section-title">PERSONAL INFORMATION</span>
+
+          <div class="profile-form-group profile-form-group-full">
+            <label for="profileName">Full Name</label>
+            <input id="profileName" type="text" placeholder="e.g. Alex Morgan" autocomplete="name" required>
+            <small class="profile-error" aria-live="polite"></small>
+          </div>
+
+          <div class="profile-form-row">
+            <div class="profile-form-group">
+              <label for="profileAge">Age</label>
+              <input id="profileAge" type="number" min="13" max="120" placeholder="28" required>
+              <small class="profile-error" aria-live="polite"></small>
+            </div>
+
+            <div class="profile-form-group">
+              <label for="profileGender">Gender</label>
+              <select id="profileGender" required>
+                <option value="">Select gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+                <option value="prefer-not-to-say">Prefer not to say</option>
+              </select>
+              <small class="profile-error" aria-live="polite"></small>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <span class="profile-section-title">BODY METRICS</span>
+
+          <div class="profile-form-row">
+            <div class="profile-form-group">
+              <label for="profileHeight">Height</label>
+              <div class="profile-input-with-unit">
+                <input id="profileHeight" type="number" min="80" max="250" placeholder="175" required>
+                <span>cm</span>
+              </div>
+              <small class="profile-error" aria-live="polite"></small>
+            </div>
+
+            <div class="profile-form-group">
+              <label for="profileWeight">Weight</label>
+              <div class="profile-input-with-unit">
+                <input id="profileWeight" type="number" min="25" max="400" step="0.1" placeholder="70" required>
+                <span>kg</span>
+              </div>
+              <small class="profile-error" aria-live="polite"></small>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-actions">
+          <button class="profile-save-button" type="submit">Save Profile</button>
+        </div>
+
+        <p class="profile-status" id="profileStatus" role="status" aria-live="polite"></p>
+      </form>
+
+    </div>
+
+  </section>
+
+  <section class="proof-strip">
+
+  </section>
+
+  <script src="../../assets/js/global.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>
