@@ -49,6 +49,216 @@
 
 
 /* =========================================
+   CALENDÁRIO DE NUTRIÇÃO
+========================================= */
+
+.meals-page .nutrition-calendar-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin: 0 0 28px;
+}
+
+.meals-page .nutrition-calendar-title {
+  text-align: center;
+  margin: 0 auto 14px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(202, 238, 214, 0.9);
+}
+
+.meals-page .nutrition-calendar-carousel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.meals-page .nutrition-calendar {
+  position: relative;
+  width: 100%;
+  min-height: 112px;
+  margin: 0;
+  padding: 22px 20px 18px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(9, 22, 30, 0.84),
+      rgba(14, 20, 29, 0.9)
+    );
+  border: 1px solid rgba(100, 170, 255, 0.38);
+  box-shadow:
+    0 0 20px rgba(74, 143, 255, 0.08),
+    inset 0 0 24px rgba(0, 0, 0, 0.22);
+}
+
+.meals-page .calendar-day {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  cursor: pointer;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.meals-page .calendar-day:hover {
+  transform: translateY(-2px);
+}
+
+.meals-page .day-progress {
+  width: 100%;
+  height: 11px;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(106, 136, 165, 0.26),
+      rgba(39, 55, 70, 0.74)
+    );
+  border: 1px solid rgba(100, 170, 255, 0.12);
+  overflow: hidden;
+}
+
+.meals-page .calendar-day.completed .day-progress,
+.meals-page .calendar-day.past .day-progress {
+  background:
+    linear-gradient(
+      90deg,
+      #38e8ee,
+      #57dce9
+    );
+  box-shadow: 0 0 9px rgba(45, 226, 240, 0.35);
+}
+
+.meals-page .calendar-day.active .day-progress {
+  background:
+    linear-gradient(
+      90deg,
+      #39e5ee,
+      #51e2eb
+    );
+  box-shadow: 0 0 12px rgba(38, 228, 240, 0.45);
+}
+
+.meals-page .calendar-day.selected .day-progress {
+  border-color: rgba(124, 164, 178, 0.7);
+  box-shadow: 0 0 0 1px rgba(124, 164, 178, 0.25), 0 0 16px rgba(45, 226, 240, 0.18);
+}
+
+.meals-page .day-number {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(232, 238, 245, 0.6);
+}
+
+.meals-page .day-name {
+  color: rgba(200, 222, 238, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.meals-page .calendar-day.completed .day-name,
+.meals-page .calendar-day.past .day-name,
+.meals-page .calendar-day.past .day-number {
+  color: rgba(120, 220, 235, 0.9);
+}
+
+.meals-page .calendar-day.active .day-name,
+.meals-page .calendar-day.active .day-number {
+  color: #dce8ec;
+}
+
+.meals-page .today-label {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: #55dfe9;
+  color: #10242b;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 0 12px rgba(50, 226, 240, 0.35);
+}
+
+.meals-page .today-label::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 7px;
+  height: 7px;
+  transform: translateX(-50%) rotate(45deg);
+  background: #55dfe9;
+}
+
+.meals-page .selected-label {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: #8fa3ad;
+  color: #10242b;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 0 10px rgba(143, 163, 173, 0.22);
+}
+
+.meals-page .selected-label::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -4px;
+  width: 7px;
+  height: 7px;
+  transform: translateX(-50%) rotate(45deg);
+  background: #8fa3ad;
+}
+
+.meals-page .calendar-nav {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(108, 170, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  color: #edfdf2;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.meals-page .calendar-nav:hover {
+  background: rgba(97, 158, 255, 0.08);
+}
+
+.meals-page .calendar-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+
+/* =========================================
    CAROUSEL
 ========================================= */
 
@@ -642,7 +852,7 @@
   width: 100%;
   min-height: 100vh;
   height: 100vh;
-  padding: 80px 8vw;
+  padding: 40px 8vw 28px;
   box-sizing: border-box;
 
   display: flex;
@@ -683,8 +893,8 @@
 .meals-page {
   position: relative;
   width: 100%;
-  min-height: 650px;
-  padding: 70px;
+  min-height: 440px;
+  padding: 38px 70px;
 
   background:
     linear-gradient(
@@ -876,13 +1086,13 @@
 
 .meals-header h2 {
 
-  font-size: 42px;
+  font-size: 34px;
 
   font-weight: 600;
 
   letter-spacing: -1px;
 
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 
 }
 
@@ -909,7 +1119,7 @@
 
   z-index: 2;
 
-  margin-top: 70px;
+  margin-top: 46px;
 
   display: grid;
 
@@ -926,10 +1136,10 @@
 ========================================= */
 
 .meal-card {
+  cursor: pointer;
+  min-height: 132px;
 
-  min-height: 150px;
-
-  padding: 24px;
+  padding: 20px;
 
   display: flex;
 
@@ -1061,7 +1271,7 @@
 
 .add-meal-button {
 
-  min-height: 150px;
+  min-height: 118px;
 
   border:
     1px dashed
@@ -1237,7 +1447,7 @@
 
   width: 100%;
 
-  min-height: 650px;
+  min-height: 440px;
 
   overflow: hidden;
 
@@ -1281,7 +1491,7 @@
 margin-top: 40px;
   inset: 0;
 
-  width: 8100%;
+  width: 100%;
 
   min-height: 650px;
 
@@ -1412,12 +1622,6 @@ margin-top: 40px;
     #758391;
 
 }
-
-
-/* =========================================
-   CLOSE
-========================================= */
-
 .meal-form-close {
 
   position: absolute;
@@ -1444,9 +1648,7 @@ margin-top: 40px;
 
   cursor: pointer;
 
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease;
 
 }
 
@@ -1546,20 +1748,14 @@ margin-top: 40px;
 
   outline: none;
 
-  background:
-    #f8fafc;
-
-  color:
-    #172330;
+  background: #f8fafc;
 
   font-family:
     var(--font-body);
 
   font-size: 13px;
 
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
 }
 
@@ -1576,9 +1772,29 @@ margin-top: 40px;
 
 }
 
+.meal-form-group.is-invalid input,
+.meal-form-group.is-invalid select {
+  border-color: rgba(220, 53, 69, 0.9);
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12);
+}
+
+.field-error-message {
+  min-height: 14px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: #d32f2f;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.field-error-message.visible {
+  opacity: 1;
+}
+
 
 /* =========================================
-   ROW
+  ROW
 ========================================= */
 
 .meal-form-row {
@@ -1613,12 +1829,12 @@ margin-top: 40px;
    NUTRITION GRID
 ========================================= */
 
+
 .nutrition-input-grid {
 
   display: grid;
 
-  grid-template-columns:
-    repeat(3, 1fr);
+  grid-template-columns: repeat(3, 1fr);
 
   gap: 16px;
 
@@ -1696,7 +1912,8 @@ margin-top: 40px;
 
 
 .meal-cancel-button,
-.meal-save-button {
+.meal-save-button,
+.meal-delete-button {
 
   height: 44px;
 
@@ -1987,4 +2204,16 @@ margin-top: 40px;
   color:
     white;
 
+}
+
+.meal-delete-button {
+  margin-right: auto;
+  border: 1px solid rgba(220, 53, 69, 0.28);
+  background: #fff5f5;
+  color: #c0394b;
+}
+
+.meal-delete-button:hover {
+  border-color: rgba(220, 53, 69, 0.55);
+  background: #ffe9eb;
 }

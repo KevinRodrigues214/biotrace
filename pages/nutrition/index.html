@@ -287,7 +287,6 @@
   </main>
 
 
-
   <!-- =========================================
        SEGUNDA SEÇÃO — MEALS
   ========================================== -->
@@ -315,6 +314,85 @@
       ======================================== -->
 
       <div class="meals-page">
+
+
+        <!-- =====================================
+             CALENDÁRIO SEMANAL
+        ====================================== -->
+
+        <div class="nutrition-calendar-shell">
+
+          <h3 class="nutrition-calendar-title" id="nutritionCalendarMonthTitle">
+            Nutrition in Month
+          </h3>
+
+          <div class="nutrition-calendar-carousel">
+
+            <button
+              class="calendar-nav nutrition-calendar-nav-left"
+              aria-label="Previous week"
+              type="button"
+            >
+              ←
+            </button>
+
+            <div class="nutrition-calendar" id="nutritionCalendar">
+
+              <div class="calendar-day" data-day="monday">
+                <div class="day-progress"></div>
+                <span class="day-number">1</span>
+                <span class="day-name">Mon</span>
+              </div>
+
+              <div class="calendar-day" data-day="tuesday">
+                <div class="day-progress"></div>
+                <span class="day-number">2</span>
+                <span class="day-name">Tue</span>
+              </div>
+
+              <div class="calendar-day" data-day="wednesday">
+                <div class="day-progress"></div>
+                <span class="day-number">3</span>
+                <span class="day-name">Wed</span>
+              </div>
+
+              <div class="calendar-day" data-day="thursday">
+                <div class="day-progress"></div>
+                <span class="day-number">4</span>
+                <span class="day-name">Thu</span>
+              </div>
+
+              <div class="calendar-day" data-day="friday">
+                <div class="day-progress"></div>
+                <span class="day-number">5</span>
+                <span class="day-name">Fri</span>
+              </div>
+
+              <div class="calendar-day" data-day="saturday">
+                <div class="day-progress"></div>
+                <span class="day-number">6</span>
+                <span class="day-name">Sat</span>
+              </div>
+
+              <div class="calendar-day" data-day="sunday">
+                <div class="day-progress"></div>
+                <span class="day-number">7</span>
+                <span class="day-name">Sun</span>
+              </div>
+
+            </div>
+
+            <button
+              class="calendar-nav nutrition-calendar-nav-right"
+              aria-label="Next week"
+              type="button"
+            >
+              →
+            </button>
+
+          </div>
+
+        </div>
 
 
         <!-- HEADER -->
@@ -485,7 +563,7 @@
           </span>
 
 
-          <h2>
+          <h2 id="mealFormTitle">
             Add Meal
           </h2>
 
@@ -511,7 +589,6 @@
           </span>
 
 
-
           <!-- MEAL NAME -->
 
           <div class="meal-form-group">
@@ -527,11 +604,13 @@
               placeholder="e.g. Chicken & Rice"
             >
 
+            <small class="field-error-message" aria-live="polite"></small>
+
           </div>
 
 
 
-          <!-- TYPE + DATE -->
+          <!-- TYPE + TIME -->
 
           <div class="meal-form-row">
 
@@ -563,21 +642,25 @@
 
               </select>
 
+              <small class="field-error-message" aria-live="polite"></small>
+
             </div>
 
 
 
             <div class="meal-form-group">
 
-              <label for="mealDate">
-                Date & Time
+              <label for="mealTime">
+                Time
               </label>
 
 
               <input
-                type="datetime-local"
-                id="mealDate"
+                type="time"
+                id="mealTime"
               >
+
+              <small class="field-error-message" aria-live="polite"></small>
 
             </div>
 
@@ -625,6 +708,8 @@
 
               </select>
 
+              <small class="field-error-message" aria-live="polite"></small>
+
             </div>
 
           </div>
@@ -646,7 +731,6 @@
           </span>
 
 
-
           <div class="nutrition-input-grid">
 
 
@@ -655,7 +739,7 @@
             <div class="meal-form-group">
 
               <label for="calories">
-                Calories
+                Calories (kcal)
               </label>
 
 
@@ -675,6 +759,8 @@
 
               </div>
 
+              <small class="field-error-message" aria-live="polite"></small>
+
             </div>
 
 
@@ -684,7 +770,7 @@
             <div class="meal-form-group">
 
               <label for="protein">
-                Protein
+                Protein (g)
               </label>
 
 
@@ -704,6 +790,8 @@
 
               </div>
 
+              <small class="field-error-message" aria-live="polite"></small>
+
             </div>
 
 
@@ -713,7 +801,7 @@
             <div class="meal-form-group">
 
               <label for="carbs">
-                Carbohydrates
+                Carbohydrates (g)
               </label>
 
 
@@ -733,6 +821,8 @@
 
               </div>
 
+              <small class="field-error-message" aria-live="polite"></small>
+
             </div>
 
 
@@ -742,7 +832,7 @@
             <div class="meal-form-group">
 
               <label for="fat">
-                Fat
+                Total Fat (g)
               </label>
 
 
@@ -762,6 +852,8 @@
 
               </div>
 
+              <small class="field-error-message" aria-live="polite"></small>
+
             </div>
 
 
@@ -771,7 +863,7 @@
             <div class="meal-form-group">
 
               <label for="fiber">
-                Fiber
+                Fiber (g)
               </label>
 
 
@@ -791,34 +883,7 @@
 
               </div>
 
-            </div>
-
-
-
-            <!-- SUGAR -->
-
-            <div class="meal-form-group">
-
-              <label for="sugar">
-                Sugar
-              </label>
-
-
-              <div class="input-with-unit">
-
-                <input
-                  type="number"
-                  id="sugar"
-                  placeholder="8"
-                  min="0"
-                >
-
-
-                <span>
-                  g
-                </span>
-
-              </div>
+              <small class="field-error-message" aria-live="polite"></small>
 
             </div>
 
@@ -829,7 +894,7 @@
             <div class="meal-form-group">
 
               <label for="sodium">
-                Sodium
+                Sodium (mg)
               </label>
 
 
@@ -849,6 +914,39 @@
 
               </div>
 
+              <small class="field-error-message" aria-live="polite"></small>
+
+            </div>
+
+
+
+            <!-- SUGAR -->
+
+            <div class="meal-form-group">
+
+              <label for="sugar">
+                Sugars (g)
+              </label>
+
+
+              <div class="input-with-unit">
+
+                <input
+                  type="number"
+                  id="sugar"
+                  placeholder="8"
+                  min="0"
+                >
+
+
+                <span>
+                  g
+                </span>
+
+              </div>
+
+              <small class="field-error-message" aria-live="polite"></small>
+
             </div>
 
 
@@ -863,7 +961,15 @@
              ACTIONS
         ====================================== -->
 
-        <div class="meal-modal-actions">
+        <div class="meal-form-actions">
+
+          <button
+            class="meal-delete-button"
+            id="mealFormDelete"
+            type="button"
+          >
+            Delete Meal
+          </button>
 
 
           <button
