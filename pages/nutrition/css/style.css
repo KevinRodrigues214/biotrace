@@ -600,6 +600,93 @@
 
 
 /* =========================================
+   DAILY OVERVIEW — PIE CHART
+========================================= */
+
+.daily-overview-chart,
+.last-seven-days-chart {
+  --protein-angle: 0deg;
+  --carbs-angle: 0deg;
+  --fat-angle: 0deg;
+  position: relative;
+  width: 174px;
+  aspect-ratio: 1;
+  margin: 4px auto 18px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #55dfe9 0deg var(--protein-angle),
+    #8fa3ad var(--protein-angle) var(--carbs-angle),
+    #4ca6df var(--carbs-angle) var(--fat-angle),
+    rgba(255, 255, 255, 0.08) var(--fat-angle) 360deg
+  );
+  box-shadow: 0 0 22px rgba(76, 205, 223, 0.18);
+}
+
+.daily-overview-chart::after,
+.last-seven-days-chart::after {
+  content: "";
+  position: absolute;
+  inset: 20px;
+  border-radius: 50%;
+  background: #102638;
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.3);
+}
+
+.daily-overview-chart-center {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.daily-overview-chart-center strong {
+  color: #edfdf2;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.daily-overview-chart-center span {
+  margin-top: 5px;
+  color: rgba(200, 222, 238, 0.72);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.daily-overview-legend {
+  display: grid;
+  gap: 9px;
+}
+
+.daily-overview-legend-item {
+  display: grid;
+  grid-template-columns: 9px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  color: rgba(200, 222, 238, 0.78);
+  font-size: 11px;
+}
+
+.daily-overview-legend-item strong {
+  color: #edfdf2;
+  font-size: 11px;
+}
+
+.daily-overview-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.protein-dot { background: #55dfe9; }
+.carbs-dot { background: #8fa3ad; }
+.fat-dot { background: #4ca6df; }
+
+
+/* =========================================
    GOALS
 ========================================= */
 
@@ -894,6 +981,8 @@
   position: relative;
   width: 100%;
   min-height: 440px;
+  max-height: calc(100vh - 68px);
+  overflow-y: auto;
   padding: 38px 70px;
 
   background:
@@ -1449,7 +1538,7 @@
 
   min-height: 440px;
 
-  overflow: hidden;
+  overflow: visible;
 
 }
 

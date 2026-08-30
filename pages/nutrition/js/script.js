@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ORDEM ATUAL
   // =========================================
 
-  let order = [1, 2, 3, 4];
+  let order = [3, 4, 1, 2];
 
 
   // =========================================
@@ -442,6 +442,105 @@ document.addEventListener('DOMContentLoaded', () => {
 // CALENDÁRIO DE NUTRIÇÃO
 // =========================================
 
+const nutritionMealsByDate = new Map();
+let selectedNutritionDate = null;
+
+function getNutritionTodayKey() {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${today.getFullYear()}-${month}-${day}`;
+}
+
+function updateDailyOverview() {
+  const chart = document.querySelector('#dailyOverviewChart');
+  const caloriesLabel = document.querySelector('#dailyOverviewCalories');
+  const proteinLabel = document.querySelector('#dailyOverviewProtein');
+  const carbsLabel = document.querySelector('#dailyOverviewCarbs');
+  const fatLabel = document.querySelector('#dailyOverviewFat');
+
+  if (!chart) return;
+
+  const meals = nutritionMealsByDate.get(getNutritionTodayKey()) || [];
+  const totals = meals.reduce((total, meal) => ({
+    calories: total.calories + Number(meal.calories || 0),
+    protein: total.protein + Number(meal.protein || 0),
+    carbs: total.carbs + Number(meal.carbs || 0),
+    fat: total.fat + Number(meal.fat || 0)
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+  const proteinCalories = totals.protein * 4;
+  const carbsCalories = totals.carbs * 4;
+  const fatCalories = totals.fat * 9;
+  const macroCalories = proteinCalories + carbsCalories + fatCalories;
+  const proteinAngle = macroCalories ? proteinCalories / macroCalories * 360 : 0;
+  const carbsAngle = macroCalories ? proteinAngle + carbsCalories / macroCalories * 360 : 0;
+  const fatAngle = macroCalories ? carbsAngle + fatCalories / macroCalories * 360 : 0;
+
+  chart.style.setProperty('--protein-angle', `${proteinAngle}deg`);
+  chart.style.setProperty('--carbs-angle', `${carbsAngle}deg`);
+  chart.style.setProperty('--fat-angle', `${fatAngle}deg`);
+
+  if (caloriesLabel) caloriesLabel.textContent = totals.calories.toLocaleString('en-US');
+  if (proteinLabel) proteinLabel.textContent = `${totals.protein} g`;
+  if (carbsLabel) carbsLabel.textContent = `${totals.carbs} g`;
+  if (fatLabel) fatLabel.textContent = `${totals.fat} g`;
+}
+
+function updateLastSevenDaysOverview() {
+  const chart = document.querySelector('#lastSevenDaysChart');
+  const caloriesLabel = document.querySelector('#lastSevenDaysCalories');
+  const proteinLabel = document.querySelector('#lastSevenDaysProtein');
+  const carbsLabel = document.querySelector('#lastSevenDaysCarbs');
+  const fatLabel = document.querySelector('#lastSevenDaysFat');
+
+  if (!chart) return;
+
+  const totals = {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0
+  };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let offset = 0; offset < 7; offset += 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - offset);
+    const dateKey = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0')
+    ].join('-');
+
+    (nutritionMealsByDate.get(dateKey) || []).forEach((meal) => {
+      totals.calories += Number(meal.calories || 0);
+      totals.protein += Number(meal.protein || 0);
+      totals.carbs += Number(meal.carbs || 0);
+      totals.fat += Number(meal.fat || 0);
+    });
+  }
+
+  const proteinCalories = totals.protein * 4;
+  const carbsCalories = totals.carbs * 4;
+  const fatCalories = totals.fat * 9;
+  const macroCalories = proteinCalories + carbsCalories + fatCalories;
+  const proteinAngle = macroCalories ? proteinCalories / macroCalories * 360 : 0;
+  const carbsAngle = macroCalories ? proteinAngle + carbsCalories / macroCalories * 360 : 0;
+  const fatAngle = macroCalories ? carbsAngle + fatCalories / macroCalories * 360 : 0;
+
+  chart.style.setProperty('--protein-angle', `${proteinAngle}deg`);
+  chart.style.setProperty('--carbs-angle', `${carbsAngle}deg`);
+  chart.style.setProperty('--fat-angle', `${fatAngle}deg`);
+
+  if (caloriesLabel) caloriesLabel.textContent = totals.calories.toLocaleString('en-US');
+  if (proteinLabel) proteinLabel.textContent = `${totals.protein} g`;
+  if (carbsLabel) carbsLabel.textContent = `${totals.carbs} g`;
+  if (fatLabel) fatLabel.textContent = `${totals.fat} g`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
   const calendar =
@@ -477,6 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let weekOffset = 0;
   let selectedDate = toDateKey(today);
+  selectedNutritionDate = selectedDate;
 
   const MIN_WEEK_OFFSET = -4;
   const MAX_WEEK_OFFSET = 0;
@@ -501,6 +601,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (dateKey === selectedDate) {
       cell.classList.add('selected');
+    }
+
+    if (nutritionMealsByDate.has(dateKey)) {
+      cell.classList.add('completed');
     }
   }
 
@@ -546,8 +650,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (!dayCells.some((cell) => cell.dataset.date === selectedDate)) {
-      selectedDate = toDateKey(today);
+      selectedDate = dayCells[0].dataset.date;
     }
+
+    selectedNutritionDate = selectedDate;
 
     dayCells.forEach((cell) => {
       if (cell.dataset.date === selectedDate) {
@@ -567,12 +673,21 @@ document.addEventListener('DOMContentLoaded', () => {
     monthTitle.textContent = `Nutrition in ${monthNames[monday.getMonth()]}`;
     prevButton.disabled = weekOffset <= MIN_WEEK_OFFSET;
     nextButton.disabled = weekOffset >= MAX_WEEK_OFFSET;
+
+    document.dispatchEvent(
+      new CustomEvent('nutrition:dateSelected', {
+        detail: { date: selectedDate }
+      })
+    );
   }
 
   function setSelectedDate(dateKey) {
     selectedDate = dateKey;
+    selectedNutritionDate = dateKey;
     renderCalendarWeek();
   }
+
+  window.renderNutritionCalendarWeek = renderCalendarWeek;
 
   calendar.addEventListener('click', (event) => {
     const cell = event.target.closest('.calendar-day');
@@ -1260,6 +1375,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('#sugar');
 
   let currentMealCard = null;
+  let currentMealIndex = -1;
     // =========================================
   // CONTROLE DO SCROLL DA PÁGINA
   // =========================================
@@ -1329,13 +1445,44 @@ document.addEventListener('DOMContentLoaded', () => {
   // ABRIR FORMULÁRIO
   // =========================================
 
-  const mealCards =
-    document.querySelectorAll(
-      '.meal-card'
-    );
+  let mealCards = Array.from(
+    document.querySelectorAll('.meal-card')
+  );
 
   const addMealButton =
     document.querySelector('.add-meal-button');
+
+  const mealsDateTitle =
+    document.querySelector('#mealsDateTitle');
+
+  function updateMealsDateTitle(dateKey) {
+    if (!mealsDateTitle || !dateKey) return;
+
+    const selected = new Date(`${dateKey}T00:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const differenceInDays = Math.round(
+      (today - selected) / (1000 * 60 * 60 * 24)
+    );
+
+    if (differenceInDays === 0) {
+      mealsDateTitle.textContent = "TODAY'S MEALS";
+      return;
+    }
+
+    if (differenceInDays === 1) {
+      mealsDateTitle.textContent = "YESTERDAY'S MEALS";
+      return;
+    }
+
+    const formattedDate = selected.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric'
+    }).toUpperCase();
+
+    mealsDateTitle.textContent = `MEALS FOR ${formattedDate}`;
+  }
 
   function resetMealForm() {
     validationFields.forEach(({ field }) => {
@@ -1376,6 +1523,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function openMealForm(card = null) {
     currentMealCard = card;
+    currentMealIndex = card ? Array.from(mealCards).indexOf(card) : -1;
     loadMealForm(card);
 
     if (mealFormTitle) {
@@ -1391,19 +1539,76 @@ document.addEventListener('DOMContentLoaded', () => {
     stage.classList.add('form-open');
   }
 
-
-  mealCards.forEach((card) => {
-
-  card.addEventListener(
-    'click',
-    () => {
-
+  function attachMealCard(card) {
+    card.addEventListener('click', () => {
       openMealForm(card);
+    });
+  }
 
+  mealCards.forEach(attachMealCard);
+
+  function createMealCard() {
+    const card = document.createElement('div');
+    card.className = 'meal-card';
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    clearMealCard(card, false);
+
+    if (addMealButton) {
+      addMealButton.before(card);
     }
-  );
 
-});
+    mealCards.push(card);
+    attachMealCard(card);
+    return card;
+  }
+
+  function renderMealsForDate(dateKey) {
+    const meals = nutritionMealsByDate.get(dateKey) || [];
+    const cardsNeeded = Math.max(3, meals.length);
+
+    while (mealCards.length > cardsNeeded) {
+      const card = mealCards.pop();
+      if (card === currentMealCard) {
+        currentMealCard = null;
+        currentMealIndex = -1;
+      }
+      card.remove();
+    }
+
+    while (mealCards.length < cardsNeeded) {
+      createMealCard();
+    }
+
+    mealCards.forEach((card, index) => {
+      const meal = meals[index];
+
+      if (meal) {
+        renderSavedMealCard(card, meal);
+      } else {
+        clearMealCard(card, false);
+      }
+    });
+  }
+
+  document.addEventListener('nutrition:dateSelected', (event) => {
+    const dateKey = event.detail && event.detail.date;
+    if (dateKey) {
+      updateMealsDateTitle(dateKey);
+      renderMealsForDate(dateKey);
+    }
+  });
+
+  document.addEventListener('nutrition:mealsUpdated', () => {
+    window.renderNutritionCalendarWeek();
+    updateDailyOverview();
+    updateLastSevenDaysOverview();
+  });
+
+  renderMealsForDate(selectedNutritionDate);
+  updateMealsDateTitle(selectedNutritionDate);
+  updateDailyOverview();
+  updateLastSevenDaysOverview();
 
 
   // =========================================
@@ -1679,12 +1884,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }[character]));
   }
 
-  function renderMealCard(card) {
-    if (!card) return;
-
+  function collectMealData() {
     const mealUnit = document.querySelector('#mealUnit');
-    const mealType = mealTypeInput.options[mealTypeInput.selectedIndex].text;
-    const mealData = {
+
+    return {
       mealName: mealNameInput.value.trim(),
       mealType: mealTypeInput.value,
       mealTime: mealTimeInput.value,
@@ -1698,17 +1901,20 @@ document.addEventListener('DOMContentLoaded', () => {
       sodium: sodiumInput.value.trim(),
       sugar: sugarInput.value.trim()
     };
+  }
+
+  function renderSavedMealCard(card, mealData) {
+    const mealType = mealTypeInput.querySelector(`option[value="${mealData.mealType}"]`)?.textContent || mealData.mealType;
+    const details = [
+      mealType,
+      mealData.mealTime,
+      `${mealData.calories} kcal`,
+      `${mealData.protein} g protein`
+    ].join(' · ');
 
     Object.entries(mealData).forEach(([key, value]) => {
       card.dataset[key] = value;
     });
-
-    const details = [
-      mealType,
-      `${mealData.mealTime}`,
-      `${mealData.calories} kcal`,
-      `${mealData.protein} g protein`
-    ].join(' · ');
 
     card.innerHTML = `
       <div class="meal-card-icon">✓</div>
@@ -1717,7 +1923,18 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
-  function clearMealCard(card) {
+  function renderMealCard(card) {
+    if (!card) return;
+
+    const meals = nutritionMealsByDate.get(selectedNutritionDate) || [];
+    const mealData = collectMealData();
+    meals[currentMealIndex] = mealData;
+    nutritionMealsByDate.set(selectedNutritionDate, meals);
+    renderSavedMealCard(card, mealData);
+    document.dispatchEvent(new CustomEvent('nutrition:mealsUpdated'));
+  }
+
+  function clearMealCard(card, removeFromStore = true) {
     if (!card) return;
 
     Object.keys(card.dataset).forEach((key) => {
@@ -1729,6 +1946,20 @@ document.addEventListener('DOMContentLoaded', () => {
       <span class="meal-card-title">Add a meal</span>
       <span class="meal-card-subtitle">No meal added</span>
     `;
+
+    if (removeFromStore) {
+      const meals = nutritionMealsByDate.get(selectedNutritionDate) || [];
+      const cardIndex = Array.from(mealCards).indexOf(card);
+      meals.splice(cardIndex, 1);
+      while (meals.length && !meals[meals.length - 1]) {
+        meals.pop();
+      }
+      if (meals.length) {
+        nutritionMealsByDate.set(selectedNutritionDate, meals);
+      } else {
+        nutritionMealsByDate.delete(selectedNutritionDate);
+      }
+    }
   }
 
 
@@ -1804,17 +2035,18 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!shouldDelete) return;
 
       clearMealCard(currentMealCard);
+      document.dispatchEvent(new CustomEvent('nutrition:mealsUpdated'));
       closeForm();
     });
   }
 
   if (addMealButton) {
     addMealButton.addEventListener('click', () => {
-      const emptyCard = Array.from(mealCards).find((card) =>
+      const emptyCard = mealCards.find((card) =>
         card.querySelector('.meal-card-subtitle')?.textContent.trim() === 'No meal added'
       );
 
-      openMealForm(emptyCard || mealCards[0] || null);
+      openMealForm(emptyCard || createMealCard());
     });
   }
 

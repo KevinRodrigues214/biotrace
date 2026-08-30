@@ -125,46 +125,34 @@
         <article class="nutrition-panel panel-2">
 
           <h2>
-            Macro-nutrients
+            Last 7 Days Overview
           </h2>
 
-
-          <div class="macro">
-
-            <span>
-              Protein
-            </span>
-
-            <strong>
-              26%
-            </strong>
-
+          <div class="last-seven-days-chart" id="lastSevenDaysChart">
+            <div class="daily-overview-chart-center">
+              <strong id="lastSevenDaysCalories">0</strong>
+              <span>kcal</span>
+            </div>
           </div>
 
+          <div class="daily-overview-legend">
+            <div class="daily-overview-legend-item">
+              <span class="daily-overview-dot protein-dot"></span>
+              <span>Protein</span>
+              <strong id="lastSevenDaysProtein">0 g</strong>
+            </div>
 
-          <div class="macro">
+            <div class="daily-overview-legend-item">
+              <span class="daily-overview-dot carbs-dot"></span>
+              <span>Carbohydrates</span>
+              <strong id="lastSevenDaysCarbs">0 g</strong>
+            </div>
 
-            <span>
-              Carbs
-            </span>
-
-            <strong>
-              30%
-            </strong>
-
-          </div>
-
-
-          <div class="macro">
-
-            <span>
-              Fats
-            </span>
-
-            <strong>
-              20%
-            </strong>
-
+            <div class="daily-overview-legend-item">
+              <span class="daily-overview-dot fat-dot"></span>
+              <span>Total Fat</span>
+              <strong id="lastSevenDaysFat">0 g</strong>
+            </div>
           </div>
 
         </article>
@@ -178,43 +166,31 @@
             Daily Overview
           </h2>
 
-
-          <div class="nutrition-stat">
-
-            <span>
-              Calories
-            </span>
-
-            <strong>
-              1,440
-            </strong>
-
+          <div class="daily-overview-chart" id="dailyOverviewChart">
+            <div class="daily-overview-chart-center">
+              <strong id="dailyOverviewCalories">0</strong>
+              <span>kcal</span>
+            </div>
           </div>
 
+          <div class="daily-overview-legend">
+            <div class="daily-overview-legend-item">
+              <span class="daily-overview-dot protein-dot"></span>
+              <span>Protein</span>
+              <strong id="dailyOverviewProtein">0 g</strong>
+            </div>
 
-          <div class="nutrition-stat">
+            <div class="daily-overview-legend-item">
+              <span class="daily-overview-dot carbs-dot"></span>
+              <span>Carbohydrates</span>
+              <strong id="dailyOverviewCarbs">0 g</strong>
+            </div>
 
-            <span>
-              Water
-            </span>
-
-            <strong>
-              75%
-            </strong>
-
-          </div>
-
-
-          <div class="nutrition-stat">
-
-            <span>
-              Recovery
-            </span>
-
-            <strong>
-              68%
-            </strong>
-
+            <div class="daily-overview-legend-item">
+              <span class="daily-overview-dot fat-dot"></span>
+              <span>Total Fat</span>
+              <strong id="dailyOverviewFat">0 g</strong>
+            </div>
           </div>
 
         </article>
@@ -404,7 +380,7 @@
           </span>
 
 
-          <h2>
+          <h2 id="mealsDateTitle">
             Your Meals
           </h2>
 
