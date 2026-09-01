@@ -1,0 +1,223 @@
+/* ===== 1. CONTAINER PRINCIPAL (HERO) ===== */
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 48px 48px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: url('../../../assets/images/background-7.jpg') center/cover no-repeat;
+}
+
+/* ===== 2. PAINEL DE LOGIN (GLASSMORPHISM) ===== */
+.login-panel {
+  position: relative;
+  z-index: 1;
+  width: min(480px, 100%);
+  max-height: calc(100vh - 140px);
+  padding: 44px 52px;
+  box-sizing: border-box;
+  border: 1px solid rgba(80, 180, 255, 0.3);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(19, 52, 77, 0.86), rgba(7, 20, 34, 0.9));
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45), inset 0 0 30px rgba(80, 180, 255, 0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(85, 223, 233, 0.55) rgba(5, 20, 35, 0.25);
+}
+
+/* ===== 3. TEXTOS / CABEÇALHO ===== */
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-header span {
+  color: #55dfe9;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.login-header h1 {
+  color: #edfdf2;
+  font-size: 28px;
+  margin: 0 0 10px 0;
+  font-weight: 600;
+}
+
+.login-header p {
+  color: #9cb1b9;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ===== 4. FORMULÁRIO E INPUTS (Corrigido para Login e Registro) ===== */
+.login-form-group {
+  width: 100%;
+}
+
+.login-form, 
+.registration-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-form label, 
+.registration-form label {
+  color: #dce8ec;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+.login-form input, 
+.registration-form input {
+  width: 100%;
+  height: 46px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border: 1px solid rgba(120, 200, 255, 0.2);
+  border-radius: 9px;
+  outline: none;
+  background: rgba(5, 20, 35, 0.55);
+  color: #edfdf2;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.login-form input:focus, 
+.registration-form input:focus {
+  border-color: rgba(85, 223, 233, 0.7);
+  box-shadow: 0 0 0 3px rgba(85, 223, 233, 0.15);
+  background: rgba(5, 20, 35, 0.75);
+}
+
+/* Mensagens de Erro */
+.login-error, 
+.registration-error {
+  color: #ff6b6b;
+  font-size: 11px;
+  margin-top: 2px;
+  min-height: 14px;
+  display: block;
+}
+
+/* ===== 5. BOTÕES ===== */
+.login-cancel-button, 
+.registration-cancel-button {
+  width: 100%;
+  height: 46px;
+  margin-top: 20px;
+  background: linear-gradient(90deg, #55dfe9, #4ca6df);
+  border: none;
+  border-radius: 9px;
+  color: #051423;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-cancel-button:hover, 
+.registration-cancel-button:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 0 15px rgba(85, 223, 233, 0.4);
+}
+
+.login-cancel-button:active, 
+.registration-cancel-button:active {
+  transform: scale(0.98);
+}
+
+/* ===== 6. VISIBILIDADE E CHAVEAMENTO ===== */
+.login-form-group {
+  display: none !important;
+  opacity: 0;
+}
+
+.login-form-group.context-active {
+  display: block !important;
+  animation: slideFromRight 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+
+}
+
+/* Links de troca de tela */
+.switch-text {
+  color: #9cb1b9;
+  font-size: 13px;
+  text-align: center;
+  margin: 15px 0 5px 0;
+}
+
+.switch-text a {
+  color: #55dfe9;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+
+.switch-text a:hover {
+  color: #4ca6df;
+  text-decoration: underline;
+}
+/* Engrenagem da animação: começa na direita (50px) e invisível, termina no lugar (0) e visível */
+@keyframes slideFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ===== 7. SCROLLBARS (CHROME/SAFARI) ===== */
+.login-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.login-panel::-webkit-scrollbar-track {
+  background: rgba(5, 20, 35, 0.25);
+  border-radius: 10px;
+}
+
+.login-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(85, 223, 233, 0.75), rgba(76, 166, 223, 0.55));
+  border-radius: 10px;
+  border: 1px solid rgba(85, 223, 233, 0.15);
+}
+
+.login-panel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(85, 223, 233, 0.95), rgba(76, 166, 223, 0.75));
+  box-shadow: 0 0 8px rgba(85, 223, 233, 0.35);
+}
+
+/* ===== 8. RESPONSIVIDADE ===== */
+@media (max-width: 480px) {
+  .hero {
+    padding: 20px;
+  }
+
+  .login-panel {
+    padding: 32px 24px;
+    max-height: 100vh;
+    border: none;
+    background: rgba(7, 20, 34, 0.95);
+  }
+
+  .login-header h1 {
+    font-size: 24px;
+  }
+}

@@ -18,11 +18,13 @@
   <span></span>
   <span></span>
 </button>
-  <div class="profile">
-      <img src="https://ui-avatars.com/api/?name=Alex+R&background=1a1f26&color=fff" alt="Foto de perfil" class="profile-avatar">
+    <div class="profile">
+    <!-- Verifique se o ID está id="userAvatar" -->
+    <img id="userAvatar" onclick="window.location.href='/pages/profile/'" src="https://ui-avatars.com" alt="Foto de perfil" class="profile-avatar">
     <div class="profile-info">
-      <span class="profile-greeting">Welcome,</span>
-      <strong class="profile-name">Alex R.</strong>
+        <span class="profile-greeting">Welcome,</span>
+        <!-- Verifique se o ID está id="userName" -->
+        <strong class="profile-name" id="userName">User</strong>
     </div>
-  </div>
+    </div> <!-- Este fecha a div class="profile" -->
 </header>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../../assets/css/global.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    
+    <section class="hero">
+        <div class="login-panel">
+            
+            <!-- FORMULÁRIO DE LOGIN -->
+            <form class="login-form-group context-active" id="loginForm">
+                <div class="login-header">
+                    <span>LOGIN</span>
+                    <h1>Welcome Back</h1>
+                    <p>Sign in to access your account.</p>
+                </div>
+                <div class="login-form">
+                    <label for="login">Login</label>
+                    <input id="login" type="text" placeholder="Enter your login" required>
+                    <small class="login-error" aria-live="polite"></small>
+
+                    <label for="password">Password</label>
+                    <input id="password" type="password" placeholder="Enter your password" required>
+                    <small class="login-error" aria-live="polite"></small>    
+                    
+                    <!-- Link para alternar de tela -->
+                    <p class="switch-text">Don't have an account? <a href="#" id="toRegister">Register here</a></p>
+                    
+                    <button type="submit" class="login-cancel-button">Login</button>
+                </div>
+            </form>
+
+            <!-- FORMULÁRIO DE REGISTRO (Começa escondido) -->
+            <form class="login-form-group" id="registrationForm">
+                <div class="login-header">
+                    <span>REGISTRATION</span>
+                    <h1>Create Account</h1>
+                    <p>Get started with your free account.</p>
+                </div>
+                <div class="registration-form">
+                    <label for="reg-user">Registration (Username)</label>
+                    <!-- ID alterado de 'registration' para 'reg-user' para evitar conflito -->
+                    <input id="reg-user" type="text" placeholder="Enter your registration" required>
+                    <small class="registration-error" aria-live="polite"></small>
+
+                    <label for="reg-password">Password</label>
+                    <!-- ID alterado de 'password' para 'reg-password' -->
+                    <input id="reg-password" type="password" placeholder="Enter your password" required>
+                    <small class="registration-error" aria-live="polite"></small>    
+                    
+                    <!-- Link para alternar de tela -->
+                    <p class="switch-text">Already have an account? <a href="#" id="toLogin">Login here</a></p>
+                    
+                    <button type="submit" class="registration-cancel-button">Register</button>
+                </div>
+            </form>
+
+        </div> 
+    </section>
+
+    <!-- Script JavaScript adicionado no final do body -->
+    <script src="js/script.js"></script>
+</body>
+</html>

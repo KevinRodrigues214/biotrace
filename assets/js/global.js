@@ -15,6 +15,10 @@ fetch('/assets/partials/header.html')
 
     headerPlaceholder.innerHTML = html;
 
+    if (window.applyUserHeader) {
+      window.applyUserHeader();
+    }
+
 
     // =========================================
     // ELEMENTOS DO HEADER
