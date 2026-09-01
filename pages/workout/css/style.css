@@ -748,6 +748,22 @@ body {
     font-weight: 300;
 }
 
+/* =========================================================
+   delete button form
+========================================================= */
+
+
+.exercise-delete-button {
+  margin-right: auto;
+  border: 1px solid rgba(220, 53, 69, 0.28);
+  background: #fff5f5;
+  color: #c0394b;
+}
+
+.exercise-delete-button:hover {
+  border-color: rgba(220, 53, 69, 0.55);
+  background: #ffe9eb;
+}
 
 /* =========================================================
    COMPLETE WORKOUT
@@ -1680,7 +1696,8 @@ body {
 }
 
 .exercise-cancel-button,
-.exercise-save-button {
+.exercise-save-button,
+.exercise-delete-button {
   height: 44px;
   padding: 0 22px;
   border-radius: 9px;

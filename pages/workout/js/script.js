@@ -15,12 +15,32 @@ function loadWorkoutSessionState() {
     return window.UserStorage.readUserData('workout_session_data', {});
 }
 
+function getSelectorCardSnapshot() {
+    return Array.from(document.querySelectorAll('.exercise-card'))
+        .map((card) => {
+            const category = card.closest('.category-panel')?.dataset.category || 'unknown';
+            const data = card.dataset.exerciseData ? JSON.parse(card.dataset.exerciseData) : null;
+
+            if (!data) {
+                return null;
+            }
+
+            return {
+                category,
+                cardId: card.dataset.cardId || `${category}-card`,
+                data
+            };
+        })
+        .filter(Boolean);
+}
+
 function persistWorkoutSessionState() {
     const payload = {
         selectedDate,
         temporaryWorkoutStore: [...temporaryWorkoutStore.entries()],
         dayCompletionStore: [...dayCompletionStore.entries()],
-        confirmedWorkoutStore: [...confirmedWorkoutStore.entries()]
+        confirmedWorkoutStore: [...confirmedWorkoutStore.entries()],
+        selectorCards: getSelectorCardSnapshot()
     };
 
     window.UserStorage.saveUserData('workout_session_data', payload);
@@ -57,6 +77,21 @@ function hydrateWorkoutSessionState() {
             if (dateKey && Array.isArray(entries)) {
                 confirmedWorkoutStore.set(dateKey, entries);
             }
+        });
+    }
+
+    if (saved.selectorCards && Array.isArray(saved.selectorCards)) {
+        saved.selectorCards.forEach(({ category, cardId, data }) => {
+            if (!category || !cardId || !data) {
+                return;
+            }
+
+            const card = document.querySelector(`.exercise-card[data-card-id="${cardId}"]`);
+            if (!card) {
+                return;
+            }
+
+            renderFilledCard(card, data);
         });
     }
 }
@@ -165,7 +200,9 @@ function saveWorkoutForDate(dateKey, entries) {
         return;
     }
 
-    temporaryWorkoutStore.set(dateKey, entries);
+    const normalized = copyEntries(entries || []);
+    temporaryWorkoutStore.set(dateKey, normalized);
+    confirmedWorkoutStore.set(dateKey, normalized);
     persistWorkoutSessionState();
 }
 
@@ -195,26 +232,51 @@ function copyEntries(entries) {
 }
 
 function restoreConfirmedWorkoutState(dateKey) {
-    const confirmed = confirmedWorkoutStore.get(dateKey);
-    const currentItems = temporaryWorkoutStore.get(dateKey) || confirmedWorkoutStore.get(dateKey) || [];
+    const savedEntries = temporaryWorkoutStore.get(dateKey) || confirmedWorkoutStore.get(dateKey) || [];
 
-    if (confirmed) {
-        temporaryWorkoutStore.set(dateKey, copyEntries(confirmed));
+    if (Array.isArray(savedEntries) && savedEntries.length) {
+        const restored = copyEntries(savedEntries);
+        temporaryWorkoutStore.set(dateKey, restored);
+        confirmedWorkoutStore.set(dateKey, restored);
         return;
     }
 
-    if (currentItems.length) {
-        temporaryWorkoutStore.set(
-            dateKey,
-            currentItems.map((item) => ({
-                ...item,
-                checked: false
-            }))
-        );
+    // Preserve saved workout data when a day has exercises but none are checked yet.
+    // Only explicit delete/remove actions should erase entries.
+}
+
+function syncWorkoutCompletionState(dateKey) {
+    const items = getSavedWorkoutForDate(dateKey);
+
+    if (!items.length) {
+        dayCompletionStore.delete(dateKey);
+        confirmedWorkoutStore.set(dateKey, []);
+        temporaryWorkoutStore.set(dateKey, []);
+        syncCalendarDayState(dateKey);
         return;
     }
 
-    temporaryWorkoutStore.delete(dateKey);
+    const checked = items.filter((item) => item.checked).length;
+    const total = items.length;
+
+    if (checked === 0) {
+        dayCompletionStore.delete(dateKey);
+        confirmedWorkoutStore.set(dateKey, copyEntries(items));
+        temporaryWorkoutStore.set(dateKey, copyEntries(items));
+        syncCalendarDayState(dateKey);
+        return;
+    }
+
+    if (checked === total) {
+        dayCompletionStore.set(dateKey, 'day-done');
+    } else {
+        dayCompletionStore.set(dateKey, 'day-partial');
+    }
+
+    confirmedWorkoutStore.set(dateKey, copyEntries(items));
+    temporaryWorkoutStore.set(dateKey, copyEntries(items));
+    persistWorkoutSessionState();
+    syncCalendarDayState(dateKey);
 }
 
 function syncSelectedWorkoutList() {
@@ -256,16 +318,46 @@ function applyCompletedWorkoutState(dateKey) {
     const checked = items.filter((item) => item.checked).length;
     const total = items.length;
 
+    if (checked === 0) {
+        dayCompletionStore.delete(dateKey);
+        syncCalendarDayState(dateKey);
+        return;
+    }
+
     if (checked === total) {
         dayCompletionStore.set(dateKey, 'day-done');
-    } else if (checked > 0) {
-        dayCompletionStore.set(dateKey, 'day-partial');
     } else {
-        dayCompletionStore.delete(dateKey);
+        dayCompletionStore.set(dateKey, 'day-partial');
     }
 
     confirmedWorkoutStore.set(dateKey, copyEntries(items));
     temporaryWorkoutStore.set(dateKey, copyEntries(items));
+    persistWorkoutSessionState();
+    syncCalendarDayState(dateKey);
+}
+
+function completeWorkoutForSelectedDate(dateKey) {
+    const items = getSavedWorkoutForDate(dateKey);
+
+    if (!items.length) {
+        return;
+    }
+
+    const checked = items.filter((item) => item.checked).length;
+    const total = items.length;
+
+    if (checked === 0) {
+        dayCompletionStore.delete(dateKey);
+        syncCalendarDayState(dateKey);
+        return;
+    }
+
+    if (checked === total) {
+        dayCompletionStore.set(dateKey, 'day-done');
+    } else {
+        dayCompletionStore.set(dateKey, 'day-partial');
+    }
+
     persistWorkoutSessionState();
     syncCalendarDayState(dateKey);
 }
@@ -450,7 +542,8 @@ function openDatePickerModal(card) {
                     <div class="date-picker-actions">
                         <button type="button" class="date-picker-cancel">Cancel</button>
                         <button type="button" class="date-picker-confirm">Save</button>
-                    </div>
+                       
+                        </div>
                 </div>
             </div>
         `;
@@ -464,7 +557,7 @@ function openDatePickerModal(card) {
     const errorLabel = activeModal.querySelector('.date-picker-error');
     const cancelButton = activeModal.querySelector('.date-picker-cancel');
     const confirmButton = activeModal.querySelector('.date-picker-confirm');
-
+    const deleteButton = activeModal.querySelector('.date-picker-delete');
     dateInput.min = minDate.toISOString().slice(0, 10);
     dateInput.max = defaultDate.toISOString().slice(0, 10);
     dateInput.value = defaultDate.toISOString().slice(0, 10);
@@ -665,7 +758,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const nextDate = cell.dataset.date;
 
             if (previousDate && previousDate !== nextDate) {
-                restoreConfirmedWorkoutState(previousDate);
+                const previousItems = getSavedWorkoutForDate(previousDate);
+                const hasUnfinishedItems = previousItems.length > 0 && previousItems.some((item) => !item.checked);
+
+                if (hasUnfinishedItems) {
+                    const shouldLeave = window.confirm(
+                        `This day will become yellow because it has saved exercises that were not completed. Keep the workout saved and switch dates?`
+                    );
+
+                    if (!shouldLeave) {
+                        markSelected(previousDate);
+                        return;
+                    }
+
+                    syncWorkoutCompletionState(previousDate);
+                } else {
+                    restoreConfirmedWorkoutState(previousDate);
+                }
             }
 
             selectedDate = nextDate;
@@ -753,6 +862,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const exerciseFormCancel =
         document.querySelector('#exerciseFormCancel');
+
+    const exerciseFormDelete =
+        document.querySelector('#exerciseFormDelete');
 
     const exerciseFormSave =
         document.querySelector('#exerciseFormSave');
@@ -931,8 +1043,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     exerciseCards.forEach((card, index) => {
 
-        // id estável pra ligar o card ao item do TODAY'S WORKOUT
-        card.dataset.cardId = `card-${index}`;
+        const category = card.closest('.category-panel')?.dataset.category || 'general';
+        card.dataset.cardId = `${category}-card-${index}`;
 
         card.addEventListener('click', (event) => {
 
@@ -994,6 +1106,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
     });
+
+    function restoreSelectorCardsFromSession() {
+        const savedState = loadWorkoutSessionState();
+        if (!savedState.selectorCards || !Array.isArray(savedState.selectorCards)) {
+            return;
+        }
+
+        savedState.selectorCards.forEach(({ category, cardId, data }) => {
+            if (!category || !cardId || !data) {
+                return;
+            }
+
+            const card = document.querySelector(`.exercise-card[data-card-id="${cardId}"]`);
+            if (!card) {
+                return;
+            }
+
+            renderFilledCard(card, data);
+        });
+    }
 
     function askToRemoveExercise(item) {
         const workoutCard = document.querySelector('.workout-card');
@@ -1296,6 +1428,31 @@ document.addEventListener('DOMContentLoaded', () => {
         exerciseFormCancel.addEventListener('click', askToClose);
     }
 
+    if (exerciseFormDelete) {
+        exerciseFormDelete.addEventListener('click', () => {
+            if (!currentCard) {
+                return;
+            }
+
+            const hasSavedData = Boolean(currentCard.dataset.exerciseData);
+            if (!hasSavedData) {
+                clearForm();
+                closeForm();
+                return;
+            }
+
+            const shouldDelete = window.confirm('Delete this preset exercise?');
+            if (!shouldDelete) {
+                return;
+            }
+
+            renderEmptyCard(currentCard);
+            clearForm();
+            persistWorkoutSessionState();
+            closeForm();
+        });
+    }
+
 
     function showFieldError(field, message) {
         if (!field) return;
@@ -1390,6 +1547,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // (e sincroniza o item do TODAY'S WORKOUT, se houver)
     // =========================================
 
+    restoreSelectorCardsFromSession();
+
     if (exerciseFormSave) {
 
         exerciseFormSave.addEventListener('click', () => {
@@ -1430,6 +1589,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
             renderFilledCard(currentCard, data);
+            persistWorkoutSessionState();
 
             if (currentTodayItem) {
                 currentTodayItem.innerHTML = buildTodayItemMarkup(data);
@@ -1467,7 +1627,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        applyCompletedWorkoutState(selectedKey);
+        completeWorkoutForSelectedDate(selectedKey);
     });
 
 });
