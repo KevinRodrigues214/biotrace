@@ -430,6 +430,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const nutritionMealsByDate = new Map();
 let selectedNutritionDate = null;
+const nutritionStorageKey = 'nutrition_session_data';
+
+function loadNutritionSessionState() {
+  try {
+    const raw = sessionStorage.getItem(nutritionStorageKey);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function persistNutritionSessionState() {
+  const payload = {
+    selectedDate: selectedNutritionDate,
+    goals: nutritionGoals,
+    meals: [...nutritionMealsByDate.entries()].map(([dateKey, meals]) => [dateKey, meals])
+  };
+
+  sessionStorage.setItem(nutritionStorageKey, JSON.stringify(payload));
+}
+
+function hydrateNutritionSessionState() {
+  const saved = loadNutritionSessionState();
+
+  if (saved.meals && Array.isArray(saved.meals)) {
+    nutritionMealsByDate.clear();
+    saved.meals.forEach(([dateKey, meals]) => {
+      if (dateKey && Array.isArray(meals)) {
+        nutritionMealsByDate.set(dateKey, meals);
+      }
+    });
+  }
+
+  if (saved.goals) {
+    nutritionGoals = saved.goals;
+  }
+
+  if (saved.selectedDate) {
+    selectedNutritionDate = saved.selectedDate;
+  }
+}
 
 function getNutritionTodayKey() {
   const today = new Date();
@@ -485,6 +526,7 @@ function renderGoalsCard() {
   content.querySelector('#goalsDeleteButton').addEventListener('click', () => {
     if (window.confirm('Delete your goals?')) {
       nutritionGoals = null;
+      persistNutritionSessionState();
       renderGoalsCard();
     }
   });
@@ -537,11 +579,16 @@ function renderGoalsForm() {
       carbs: fields[2].value,
       fat: fields[3].value
     };
+
+    persistNutritionSessionState();
     renderGoalsCard();
   });
 }
 
-document.addEventListener('DOMContentLoaded', renderGoalsCard);
+document.addEventListener('DOMContentLoaded', () => {
+  hydrateNutritionSessionState();
+  renderGoalsCard();
+});
 
 function updateMealPlan() {
   const list = document.querySelector('#mealPlanList');
@@ -808,6 +855,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function setSelectedDate(dateKey) {
     selectedDate = dateKey;
     selectedNutritionDate = dateKey;
+    persistNutritionSessionState();
     renderCalendarWeek();
   }
 
@@ -2056,6 +2104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mealData = collectMealData();
     meals[currentMealIndex] = mealData;
     nutritionMealsByDate.set(selectedNutritionDate, meals);
+    persistNutritionSessionState();
     renderSavedMealCard(card, mealData);
     document.dispatchEvent(new CustomEvent('nutrition:mealsUpdated'));
   }
@@ -2085,6 +2134,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         nutritionMealsByDate.delete(selectedNutritionDate);
       }
+      persistNutritionSessionState();
     }
   }
 

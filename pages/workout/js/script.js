@@ -2,6 +2,62 @@ const temporaryWorkoutStore = new Map();
 const dayCompletionStore = new Map();
 const confirmedWorkoutStore = new Map();
 let selectedDate = null;
+const workoutStorageKey = 'workout_session_data';
+
+function loadWorkoutSessionState() {
+    try {
+        const raw = sessionStorage.getItem(workoutStorageKey);
+        return raw ? JSON.parse(raw) : {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function persistWorkoutSessionState() {
+    const payload = {
+        selectedDate,
+        temporaryWorkoutStore: [...temporaryWorkoutStore.entries()],
+        dayCompletionStore: [...dayCompletionStore.entries()],
+        confirmedWorkoutStore: [...confirmedWorkoutStore.entries()]
+    };
+
+    sessionStorage.setItem(workoutStorageKey, JSON.stringify(payload));
+}
+
+function hydrateWorkoutSessionState() {
+    const saved = loadWorkoutSessionState();
+
+    if (saved.selectedDate) {
+        selectedDate = saved.selectedDate;
+    }
+
+    if (saved.temporaryWorkoutStore && Array.isArray(saved.temporaryWorkoutStore)) {
+        temporaryWorkoutStore.clear();
+        saved.temporaryWorkoutStore.forEach(([dateKey, entries]) => {
+            if (dateKey && Array.isArray(entries)) {
+                temporaryWorkoutStore.set(dateKey, entries);
+            }
+        });
+    }
+
+    if (saved.dayCompletionStore && Array.isArray(saved.dayCompletionStore)) {
+        dayCompletionStore.clear();
+        saved.dayCompletionStore.forEach(([dateKey, state]) => {
+            if (dateKey && state) {
+                dayCompletionStore.set(dateKey, state);
+            }
+        });
+    }
+
+    if (saved.confirmedWorkoutStore && Array.isArray(saved.confirmedWorkoutStore)) {
+        confirmedWorkoutStore.clear();
+        saved.confirmedWorkoutStore.forEach(([dateKey, entries]) => {
+            if (dateKey && Array.isArray(entries)) {
+                confirmedWorkoutStore.set(dateKey, entries);
+            }
+        });
+    }
+}
 
 const exercisesByCategory = {
     push: [
@@ -108,6 +164,7 @@ function saveWorkoutForDate(dateKey, entries) {
     }
 
     temporaryWorkoutStore.set(dateKey, entries);
+    persistWorkoutSessionState();
 }
 
 function showSaveConfirmation(message) {
@@ -207,6 +264,7 @@ function applyCompletedWorkoutState(dateKey) {
 
     confirmedWorkoutStore.set(dateKey, copyEntries(items));
     temporaryWorkoutStore.set(dateKey, copyEntries(items));
+    persistWorkoutSessionState();
     syncCalendarDayState(dateKey);
 }
 
@@ -473,6 +531,7 @@ function saveCardToPreviousDay(card) {
 // =========================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    hydrateWorkoutSessionState();
 
     const calendar = document.querySelector('#workoutCalendar');
     const monthTitle = document.querySelector('#calendarMonthTitle');
@@ -496,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentMonday.setDate(today.getDate() - todayDow);
 
     let weekOffset = 0;
-    selectedDate = toDateKey(today);
+    selectedDate = selectedDate || toDateKey(today);
 
     const MIN_WEEK_OFFSET = -4; // até 1 mês pra trás
     const MAX_WEEK_OFFSET = 0;  // não deixa ir pro futuro
@@ -591,7 +650,11 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    window.markSelectedWorkoutDate = markSelected;
+    window.markSelectedWorkoutDate = (dateKey) => {
+        selectedDate = dateKey;
+        persistWorkoutSessionState();
+        markSelected(dateKey);
+    };
 
     calendar.addEventListener('click', (event) => {
         const cell = event.target.closest('.calendar-day');
@@ -604,6 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             selectedDate = nextDate;
+            persistWorkoutSessionState();
             markSelected(selectedDate);
             syncSelectedWorkoutList();
         }
