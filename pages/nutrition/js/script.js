@@ -430,15 +430,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const nutritionMealsByDate = new Map();
 let selectedNutritionDate = null;
-const nutritionStorageKey = 'nutrition_session_data';
+
+function getUserStorageSlug() {
+  return window.UserStorage.getCurrentUserSlug();
+}
+
+function getNutritionStorageKey() {
+  return window.UserStorage.getUserStorageKey('nutrition_session_data');
+}
 
 function loadNutritionSessionState() {
-  try {
-    const raw = sessionStorage.getItem(nutritionStorageKey);
-    return raw ? JSON.parse(raw) : {};
-  } catch (error) {
-    return {};
-  }
+  return window.UserStorage.readUserData('nutrition_session_data', {});
 }
 
 function persistNutritionSessionState() {
@@ -448,7 +450,7 @@ function persistNutritionSessionState() {
     meals: [...nutritionMealsByDate.entries()].map(([dateKey, meals]) => [dateKey, meals])
   };
 
-  sessionStorage.setItem(nutritionStorageKey, JSON.stringify(payload));
+  window.UserStorage.saveUserData('nutrition_session_data', payload);
 }
 
 function hydrateNutritionSessionState() {

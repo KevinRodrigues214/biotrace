@@ -2,15 +2,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const profilePanel = document.querySelector('.profile-panel');
   const logoutButton = document.getElementById('logoutButton');
   const profileForm = document.getElementById('profileForm');
-  const profileKey = 'profile_data';
   const userKey = 'logged_user';
 
+  const getUserStorageSlug = () => window.UserStorage.getCurrentUserSlug();
+  const getProfileStorageKey = () => window.UserStorage.getUserStorageKey('profile_data');
+
   const loadSavedProfile = () => {
-    try {
-      return JSON.parse(sessionStorage.getItem(profileKey) || '{}');
-    } catch (error) {
-      return {};
-    }
+    return window.UserStorage.readUserData('profile_data', {});
   };
 
   const setInputValue = (id, value) => {
@@ -41,8 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      sessionStorage.removeItem(userKey);
-      sessionStorage.removeItem(profileKey);
+      window.UserStorage.removeCurrentUserSession();
       window.location.href = '/pages/loginAndRegistration/';
     });
   }
@@ -79,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      sessionStorage.setItem(profileKey, JSON.stringify(nextProfile));
+      window.UserStorage.saveUserData('profile_data', nextProfile);
       alert('Profile updated successfully!');
       window.location.href = '/pages/homepage/';
     });

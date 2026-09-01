@@ -2,15 +2,17 @@ const temporaryWorkoutStore = new Map();
 const dayCompletionStore = new Map();
 const confirmedWorkoutStore = new Map();
 let selectedDate = null;
-const workoutStorageKey = 'workout_session_data';
+
+function getWorkoutUserStorageSlug() {
+    return window.UserStorage.getCurrentUserSlug();
+}
+
+function getWorkoutStorageKey() {
+    return window.UserStorage.getUserStorageKey('workout_session_data');
+}
 
 function loadWorkoutSessionState() {
-    try {
-        const raw = sessionStorage.getItem(workoutStorageKey);
-        return raw ? JSON.parse(raw) : {};
-    } catch (error) {
-        return {};
-    }
+    return window.UserStorage.readUserData('workout_session_data', {});
 }
 
 function persistWorkoutSessionState() {
@@ -21,7 +23,7 @@ function persistWorkoutSessionState() {
         confirmedWorkoutStore: [...confirmedWorkoutStore.entries()]
     };
 
-    sessionStorage.setItem(workoutStorageKey, JSON.stringify(payload));
+    window.UserStorage.saveUserData('workout_session_data', payload);
 }
 
 function hydrateWorkoutSessionState() {
