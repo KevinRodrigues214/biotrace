@@ -1,23 +1,23 @@
 function getInitialsFromName(username) {
-    const partesDoNome = username.trim().split(/\s+/).filter(Boolean);
+    const Namesparts = username.trim().split(/\s+/).filter(Boolean);
 
-    if (!partesDoNome.length) {
+    if (!Namesparts.length) {
         return 'US';
     }
 
-    if (partesDoNome.length >= 2) {
-        return (partesDoNome[0][0] + partesDoNome[partesDoNome.length - 1][0]).toUpperCase();
+    if (Namesparts.length >= 2) {
+        return (Namesparts[0][0] + Namesparts[Namesparts.length - 1][0]).toUpperCase();
     }
 
-    return partesDoNome[0].substring(0, 2).toUpperCase();
+    return Namesparts[0].substring(0, 2).toUpperCase();
 }
 
 function inicializarHeader() {
-    const usuarioLogado = (sessionStorage.getItem('usuario_logado') || '').trim();
+    const loggedUser = (sessionStorage.getItem('logged_user') || '').trim();
     const currentPath = window.location.pathname.toLowerCase();
     const loginPath = '/pages/loginandregistration/';
 
-    if (!usuarioLogado) {
+    if (!loggedUser) {
         if (!currentPath.startsWith(loginPath) && !currentPath.endsWith('/pages/loginandregistration')) {
             window.location.href = '/pages/loginAndRegistration/';
         }
@@ -33,20 +33,20 @@ function inicializarHeader() {
         return;
     }
 
-    userNameElement.textContent = usuarioLogado;
+    userNameElement.textContent = loggedUser;
 
-    const iniciais = getInitialsFromName(usuarioLogado);
-    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciais)}&background=1a1f26&color=fff&bold=true&length=2`;
+    const initials = getInitialsFromName(loggedUser);
+    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=1a1f26&color=fff&bold=true&length=2`;
 
     userAvatarElement.src = avatarUrl;
-    userAvatarElement.alt = `Avatar de ${usuarioLogado}`;
+    userAvatarElement.alt = `Avatar de ${loggedUser}`;
 
     topbar.classList.add('header-animate-in');
     if (navList) {
         navList.classList.add('nav-animate-in');
     }
 
-    console.log('Sucesso! Header animado e atualizado com as iniciais:', iniciais);
+    console.log('Success! Animated and updated header with initials:', initials);
 }
 
 window.applyUserHeader = inicializarHeader;

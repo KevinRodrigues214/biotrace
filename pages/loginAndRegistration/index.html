@@ -34,30 +34,46 @@
                 </div>
             </form>
 
-            <!-- FORMULÁRIO DE REGISTRO (Começa escondido) -->
-            <form class="login-form-group" id="registrationForm">
-                <div class="login-header">
-                    <span>REGISTRATION</span>
-                    <h1>Create Account</h1>
-                    <p>Get started with your free account.</p>
-                </div>
-                <div class="registration-form">
-                    <label for="reg-user">Registration (Username)</label>
-                    <!-- ID alterado de 'registration' para 'reg-user' para evitar conflito -->
-                    <input id="reg-user" type="text" placeholder="Enter your registration" required>
-                    <small class="registration-error" aria-live="polite"></small>
+            <!-- FORMULÁRIO DE REGISTRO -->
+<form class="login-form-group" id="registrationForm">
+    <div class="login-header">
+        <span>REGISTRATION</span>
+        <h1>Create Account</h1>
+        <p>Get started with your free account.</p>
+    </div>
+    <div class="registration-form">
+        <!-- Nome Completo (Adicionado para coletar as iniciais reais do avatar) -->
+        <label for="reg-name">Full Name</label>
+        <input id="reg-name" type="text" placeholder="Enter your full name" required>
+        <small class="registration-error" id="err-reg-name" aria-live="polite"></small>  
 
-                    <label for="reg-password">Password</label>
-                    <!-- ID alterado de 'password' para 'reg-password' -->
-                    <input id="reg-password" type="password" placeholder="Enter your password" required>
-                    <small class="registration-error" aria-live="polite"></small>    
-                    
-                    <!-- Link para alternar de tela -->
-                    <p class="switch-text">Already have an account? <a href="#" id="toLogin">Login here</a></p>
-                    
-                    <button type="submit" class="registration-cancel-button">Register</button>
-                </div>
-            </form>
+        <!-- Username -->
+        <label for="reg-user">Username</label>
+        <input id="reg-user" type="text" placeholder="Enter your username" required>
+        <small class="registration-error" id="err-reg-user" aria-live="polite"></small>
+
+        <!-- Email (Modificado para type="email") -->
+        <label for="reg-email">Email</label>
+        <input id="reg-email" type="email" placeholder="Enter your email" required>
+        <small class="registration-error" id="err-reg-email" aria-live="polite"></small>  
+
+        <!-- Senha -->
+        <label for="reg-password">Password</label>
+        <input id="reg-password" type="password" placeholder="Min. 6 characters" required>
+        <small class="registration-error" id="err-reg-password" aria-live="polite"></small>    
+
+        <!-- Confirmar Senha -->
+        <label for="reg-confirm-password">Confirm Password</label>
+        <input id="reg-confirm-password" type="password" placeholder="Repeat your password" required>
+        <small class="registration-error" id="err-reg-confirm-password" aria-live="polite"></small>  
+
+        <!-- Link para alternar de tela -->
+        <p class="switch-text">Already have an account? <a href="#" id="toLogin">Login here</a></p>
+        
+        <button type="submit" class="registration-cancel-button">Register</button>
+    </div>
+</form>
+
 
         </div> 
     </section>

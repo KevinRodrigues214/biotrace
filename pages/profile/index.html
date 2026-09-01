@@ -30,14 +30,14 @@
 
           <div class="profile-form-group profile-form-group-full">
             <label for="profileName">Full Name</label>
-            <input id="profileName" type="text" placeholder="e.g. Alex Morgan" autocomplete="name" required>
+            <input id="profileName" type="text" value="" autocomplete="name" required>
             <small class="profile-error" aria-live="polite"></small>
           </div>
 
           <div class="profile-form-row">
             <div class="profile-form-group">
               <label for="profileAge">Age</label>
-              <input id="profileAge" type="number" min="13" max="120" placeholder="28" required>
+              <input id="profileAge" type="number" min="13" value="" max="120" placeholder="28" required>
               <small class="profile-error" aria-live="polite"></small>
             </div>
 
@@ -80,6 +80,7 @@
         </div>
 
         <div class="profile-actions">
+          <button class="profile-logout-button" type="button" id="logoutButton">Log out</button>
           <button class="profile-save-button" type="submit">Save Profile</button>
         </div>
 
@@ -96,6 +97,7 @@
 
   <script src="../../assets/js/global.js"></script>
   <script src="js/script.js"></script>
-   <script src="../../assets/js/auth.js"></script>
+  <script src="../../assets/js/auth.js"></script>
+  <script src="../loginAndRegistration/js/script.js"></script>
 </body>
 </html>
