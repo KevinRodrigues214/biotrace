@@ -37,13 +37,95 @@ const STATUS_COLORS = {
 
 };
 
+const CHEST_EXERCISES = new Set([
+  'Bench Press',
+  'Incline Dumbbell Press'
+]);
+
+const ABS_EXERCISES = new Set([
+  'Plank',
+  'Hanging Leg Raise',
+  'Cable Crunch',
+  'Russian Twist',
+  'Ab Wheel Rollout'
+]);
+
+function getWorkoutMuscleGroup(workout) {
+  const name = String(workout?.name || '').trim();
+
+  if (CHEST_EXERCISES.has(name)) {
+    return 'muscle_chest';
+  }
+
+  if (ABS_EXERCISES.has(name)) {
+    return 'muscle_abs';
+  }
+
+  return null;
+}
+
+function getWorkoutTimestamp(dateKey, workoutTime) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey || '') || !/^\d{2}:\d{2}$/.test(workoutTime || '')) {
+    return null;
+  }
+
+  const timestamp = new Date(`${dateKey}T${workoutTime}:00`).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
+}
+
+function getLatestMuscleWorkouts() {
+  const saved = window.UserStorage?.readUserData('workout_session_data', {});
+  const latest = {};
+
+  (saved?.temporaryWorkoutStore || []).forEach(([dateKey, workouts]) => {
+    if (!Array.isArray(workouts)) {
+      return;
+    }
+
+    workouts.forEach((workout) => {
+      const muscleName = getWorkoutMuscleGroup(workout);
+      const timestamp = getWorkoutTimestamp(dateKey, workout?.workoutTime);
+
+      if (
+        muscleName &&
+        timestamp !== null &&
+        (!latest[muscleName] || timestamp > latest[muscleName])
+      ) {
+        latest[muscleName] = timestamp;
+      }
+    });
+  });
+
+  return latest;
+}
+
+function getRecoveryStatus(timestamp, now = Date.now()) {
+  const elapsedHours = Math.max(0, now - timestamp) / (1000 * 60 * 60);
+
+  if (elapsedHours >= 48) {
+    return 'recovered';
+  }
+
+  if (elapsedHours >= 24) {
+    return 'medium';
+  }
+
+  return 'high';
+}
+
+function applySavedWorkoutStatuses() {
+  Object.entries(getLatestMuscleWorkouts()).forEach(([muscleName, timestamp]) => {
+    setMuscleStatus(muscleName, getRecoveryStatus(timestamp));
+  });
+}
+
 
 // =====================================================
 // MATERIAL HOLOGRÁFICO
 // =====================================================
 
 function createHologramMaterial() {
-
+  
   return new THREE.ShaderMaterial({
 
     transparent: true,
@@ -720,7 +802,7 @@ loader.load(
     scene.add(
       model
     );
-
+    
 
     // =================================================
     // POSIÇÃO DO HOLOGRAMA
@@ -810,7 +892,7 @@ loader.load(
     setMuscleStatus(
 
       'muscle_chest',
-      'medium'
+      'recovered'
 
     );
 
@@ -822,6 +904,9 @@ loader.load(
 
     );
 
+    applySavedWorkoutStatuses();
+
+  printMuscleConsole()
   },
 
 
@@ -1253,7 +1338,7 @@ window.addEventListener(
     camera.aspect =
       width /
       height;
-
+    
 
     camera.updateProjectionMatrix();
 
@@ -1268,3 +1353,5 @@ window.addEventListener(
   }
 
 );
+
+

@@ -164,7 +164,9 @@ function buildTodayItemMarkup(data) {
         <div class="exercise-info">
             <span class="exercise-name">${data.name}</span>
             <span class="exercise-target">${data.targetSets || 0} × ${data.targetReps || 0}</span>
+            
         </div>
+        <span class="exercise-time">${data.workoutTime || '--:--'}</span>
 
         <div class="exercise-stats">
             <span>${data.sets || 0} Sets</span>
@@ -473,6 +475,7 @@ function saveCardToDate(card, dateKey) {
 
     const itemData = {
         ...data,
+        category: data.category || card.closest('.category-panel')?.dataset.category || 'general',
         sourceCard: cardId,
         date: dateKey,
         checked: previousItem ? Boolean(previousItem.checked) : false
@@ -880,6 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const targetSetsInput =
         document.querySelector('#targetSets');
+    const workoutTimeInput = document.querySelector('#workoutTime');
 
     const targetRepsInput =
         document.querySelector('#targetReps');
@@ -953,6 +957,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `
             <span class="exercise-card-name">${data.name}</span>
             <span class="exercise-card-target">${data.targetSets || 0} × ${data.targetReps || 0}</span>
+            <span class="exercise-card-time">${data.workoutTime || '--:--'}</span>
             <span class="exercise-card-stats">${data.sets || 0} Sets · ${data.reps || 0} Reps${weightLine}</span>
             <div class="exercise-card-actions">
                 <button type="button" class="exercise-card-save">Save to Today</button>
@@ -978,6 +983,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (targetSetsInput) {
             targetSetsInput.value = '';
+        }
+
+        if (workoutTimeInput) {
+            workoutTimeInput.value = '';
         }
 
         if (targetRepsInput) {
@@ -1012,8 +1021,16 @@ document.addEventListener('DOMContentLoaded', () => {
             exerciseNameInput.value = data.name || '';
         }
 
+        if (exerciseCategorySelect) {
+            exerciseCategorySelect.value = data.category || 'push';
+            populateExerciseOptions(exerciseCategorySelect.value, data.name || '');
+        }
+
         if (targetSetsInput) {
             targetSetsInput.value = data.targetSets || '';
+        }
+        if (workoutTimeInput) {
+            workoutTimeInput.value = data.workoutTime || '';
         }
 
         if (targetRepsInput) {
@@ -1527,7 +1544,8 @@ document.addEventListener('DOMContentLoaded', () => {
         { field: targetRepsInput, type: 'number', label: 'target reps' },
         { field: completedSetsInput, type: 'number', label: 'sets' },
         { field: completedRepsInput, type: 'number', label: 'reps' },
-        { field: exerciseWeightInput, type: 'number', label: 'weight' }
+        { field: exerciseWeightInput, type: 'number', label: 'weight' },
+        
     ];
 
     validationFields.forEach(({ field, type, label }) => {
@@ -1575,11 +1593,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const nameValue = exerciseNameInput ? exerciseNameInput.value.trim() : '';
             const data = {
                 name: nameValue,
+                category: exerciseCategorySelect ? exerciseCategorySelect.value : 'general',
                 targetSets: targetSetsInput ? targetSetsInput.value : '',
                 targetReps: targetRepsInput ? targetRepsInput.value : '',
                 sets: completedSetsInput ? completedSetsInput.value : '',
                 reps: completedRepsInput ? completedRepsInput.value : '',
-                weight: exerciseWeightInput ? exerciseWeightInput.value : ''
+                weight: exerciseWeightInput ? exerciseWeightInput.value : '',
+                workoutTime: workoutTimeInput ? workoutTimeInput.value : ''
             };
 
             if (!data.name) {

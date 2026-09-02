@@ -1244,8 +1244,16 @@ body {
   font-size: 13px;
   color: rgba(210, 220, 230, 0.65);
 }
+/* =========================================
+    EXERCISE CARD — TEMPO DE DURAÇÃO
+========================================= */
+.exercise-time {
+    color: rgba(0, 147, 245, 0.7);
 
+    font-size: 13px;
 
+    white-space: nowrap;
+}
 /* =========================================
    CATEGORY TRAVADA NO FORMULÁRIO
 ========================================= */
