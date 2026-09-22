@@ -477,6 +477,3 @@ padding-top: 120px;
 .proof-col:nth-child(2) { transition-delay: 0.15s; }
 .proof-col:nth-child(3) { transition-delay: 0.3s; }
 
-@view-transition {
-  navigation: auto;
-}

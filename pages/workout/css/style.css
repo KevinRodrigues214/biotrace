@@ -205,8 +205,7 @@ body {
 
 /* Completed day */
 
-.calendar-day.completed .day-progress,
-.calendar-day.past .day-progress {
+.calendar-day.completed .day-progress {
     background:
         linear-gradient(
             90deg,
@@ -221,7 +220,8 @@ body {
 
 /* Active day */
 
-.calendar-day.active .day-progress {
+.calendar-day.active .day-progress,
+.calendar-day.past .day-progress {
     background:
         linear-gradient(
             90deg,

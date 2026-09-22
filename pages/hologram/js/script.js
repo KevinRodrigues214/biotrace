@@ -83,6 +83,10 @@ function getLatestMuscleWorkouts() {
     }
 
     workouts.forEach((workout) => {
+      if (workout?.checked !== true) {
+        return;
+      }
+
       const muscleName = getWorkoutMuscleGroup(workout);
       const timestamp = getWorkoutTimestamp(dateKey, workout?.workoutTime);
 
@@ -890,18 +894,13 @@ loader.load(
     // =================================================
 
     setMuscleStatus(
-
       'muscle_chest',
       'recovered'
-
     );
 
-
     setMuscleStatus(
-
       'muscle_abs',
       'recovered'
-
     );
 
     applySavedWorkoutStatuses();

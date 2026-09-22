@@ -2,6 +2,80 @@ const temporaryWorkoutStore = new Map();
 const dayCompletionStore = new Map();
 const confirmedWorkoutStore = new Map();
 let selectedDate = null;
+let exitPromptSuppressedForDate = null;
+
+function getWorkoutExitState() {
+    const dateKey = getSelectedDateKey();
+
+    if (!dateKey) {
+        return null;
+    }
+
+    const items = getSavedWorkoutForDate(dateKey);
+
+    if (!items.length) {
+        return null;
+    }
+
+    return {
+        dateKey,
+        isComplete: items.every((item) => item.checked === true)
+    };
+}
+
+function confirmWorkoutPageExit(event) {
+    const link = event.target.closest('a[href]');
+
+    if (!link || event.defaultPrevented || event.button !== 0) {
+        return;
+    }
+
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+    }
+
+    const destination = new URL(link.href, window.location.href);
+
+    if (
+        destination.origin !== window.location.origin ||
+        destination.pathname === window.location.pathname ||
+        link.target === '_blank' ||
+        link.hasAttribute('download')
+    ) {
+        return;
+    }
+
+    const workoutState = getWorkoutExitState();
+
+    if (!workoutState) {
+        return;
+    }
+
+    if (
+        workoutState.isComplete &&
+        exitPromptSuppressedForDate === workoutState.dateKey
+    ) {
+        return;
+    }
+
+    const message = workoutState.isComplete
+        ? 'This day will become green because all saved exercises were completed. Keep the workout saved and leave this page?'
+        : 'This day will become yellow because it has saved exercises that were not completed. Keep the workout saved and leave this page?';
+
+    const shouldLeave = window.confirm(
+        message
+    );
+
+    if (!shouldLeave) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+    }
+
+    syncWorkoutCompletionState(workoutState.dateKey);
+}
+
+document.addEventListener('click', confirmWorkoutPageExit, true);
 
 function getWorkoutUserStorageSlug() {
     return window.UserStorage.getCurrentUserSlug();
@@ -262,9 +336,10 @@ function syncWorkoutCompletionState(dateKey) {
     const total = items.length;
 
     if (checked === 0) {
-        dayCompletionStore.delete(dateKey);
+        dayCompletionStore.set(dateKey, 'day-partial');
         confirmedWorkoutStore.set(dateKey, copyEntries(items));
         temporaryWorkoutStore.set(dateKey, copyEntries(items));
+        persistWorkoutSessionState();
         syncCalendarDayState(dateKey);
         return;
     }
@@ -321,7 +396,7 @@ function applyCompletedWorkoutState(dateKey) {
     const total = items.length;
 
     if (checked === 0) {
-        dayCompletionStore.delete(dateKey);
+        dayCompletionStore.set(dateKey, 'day-partial');
         syncCalendarDayState(dateKey);
         return;
     }
@@ -349,7 +424,7 @@ function completeWorkoutForSelectedDate(dateKey) {
     const total = items.length;
 
     if (checked === 0) {
-        dayCompletionStore.delete(dateKey);
+        dayCompletionStore.set(dateKey, 'day-partial');
         syncCalendarDayState(dateKey);
         return;
     }
@@ -1648,6 +1723,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         completeWorkoutForSelectedDate(selectedKey);
+        exitPromptSuppressedForDate = selectedKey;
     });
 
 });
