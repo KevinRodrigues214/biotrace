@@ -1,8 +1,8 @@
 const temporaryWorkoutStore = new Map();
 const dayCompletionStore = new Map();
 const confirmedWorkoutStore = new Map();
+const clearedWorkoutDates = new Set();
 let selectedDate = null;
-let exitPromptSuppressedForDate = null;
 
 function getWorkoutExitState() {
     const dateKey = getSelectedDateKey();
@@ -17,9 +17,15 @@ function getWorkoutExitState() {
         return null;
     }
 
+    const isComplete = items.length > 0 && items.every((item) => item.checked === true);
+
+    if (!isComplete && dayCompletionStore.get(dateKey) === 'day-partial') {
+        return null;
+    }
+
     return {
         dateKey,
-        isComplete: items.every((item) => item.checked === true)
+        isComplete
     };
 }
 
@@ -51,19 +57,18 @@ function confirmWorkoutPageExit(event) {
         return;
     }
 
-    if (
-        workoutState.isComplete &&
-        exitPromptSuppressedForDate === workoutState.dateKey
-    ) {
+    const greenStateAlreadyConfirmed =
+        dayCompletionStore.get(workoutState.dateKey) === 'day-done';
+
+    if (workoutState.isComplete && greenStateAlreadyConfirmed) {
+        syncWorkoutCompletionState(workoutState.dateKey);
         return;
     }
 
-    const message = workoutState.isComplete
-        ? 'This day will become green because all saved exercises were completed. Keep the workout saved and leave this page?'
-        : 'This day will become yellow because it has saved exercises that were not completed. Keep the workout saved and leave this page?';
-
     const shouldLeave = window.confirm(
-        message
+        workoutState.isComplete
+            ? 'This day will become green because all exercises were completed. Keep the workout saved and leave this page?'
+            : 'This day will become yellow because it has saved exercises that were not completed. Keep the workout saved and leave this page?'
     );
 
     if (!shouldLeave) {
@@ -114,6 +119,7 @@ function persistWorkoutSessionState() {
         temporaryWorkoutStore: [...temporaryWorkoutStore.entries()],
         dayCompletionStore: [...dayCompletionStore.entries()],
         confirmedWorkoutStore: [...confirmedWorkoutStore.entries()],
+        clearedWorkoutDates: [...clearedWorkoutDates],
         selectorCards: getSelectorCardSnapshot()
     };
 
@@ -150,6 +156,15 @@ function hydrateWorkoutSessionState() {
         saved.confirmedWorkoutStore.forEach(([dateKey, entries]) => {
             if (dateKey && Array.isArray(entries)) {
                 confirmedWorkoutStore.set(dateKey, entries);
+            }
+        });
+    }
+
+    if (saved.clearedWorkoutDates && Array.isArray(saved.clearedWorkoutDates)) {
+        clearedWorkoutDates.clear();
+        saved.clearedWorkoutDates.forEach((dateKey) => {
+            if (dateKey) {
+                clearedWorkoutDates.add(dateKey);
             }
         });
     }
@@ -326,8 +341,10 @@ function syncWorkoutCompletionState(dateKey) {
 
     if (!items.length) {
         dayCompletionStore.delete(dateKey);
+        clearedWorkoutDates.delete(dateKey);
         confirmedWorkoutStore.set(dateKey, []);
         temporaryWorkoutStore.set(dateKey, []);
+        persistWorkoutSessionState();
         syncCalendarDayState(dateKey);
         return;
     }
@@ -417,6 +434,10 @@ function completeWorkoutForSelectedDate(dateKey) {
     const items = getSavedWorkoutForDate(dateKey);
 
     if (!items.length) {
+        clearedWorkoutDates.delete(dateKey);
+        dayCompletionStore.delete(dateKey);
+        persistWorkoutSessionState();
+        syncCalendarDayState(dateKey);
         return;
     }
 
@@ -561,6 +582,8 @@ function saveCardToDate(card, dateKey) {
     } else {
         items.push(itemData);
     }
+
+    clearedWorkoutDates.delete(dateKey);
 
     saveWorkoutForDate(dateKey, items);
 
@@ -838,10 +861,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (previousDate && previousDate !== nextDate) {
                 const previousItems = getSavedWorkoutForDate(previousDate);
                 const hasUnfinishedItems = previousItems.length > 0 && previousItems.some((item) => !item.checked);
+                const yellowStateAlreadyConfirmed = dayCompletionStore.get(previousDate) === 'day-partial';
+                const allItemsCompleted = previousItems.length > 0 && previousItems.every((item) => item.checked === true);
+                const greenStateAlreadyConfirmed = dayCompletionStore.get(previousDate) === 'day-done';
 
-                if (hasUnfinishedItems) {
+                if (
+                    (hasUnfinishedItems && !yellowStateAlreadyConfirmed) ||
+                    (allItemsCompleted && !greenStateAlreadyConfirmed)
+                ) {
                     const shouldLeave = window.confirm(
-                        `This day will become yellow because it has saved exercises that were not completed. Keep the workout saved and switch dates?`
+                        allItemsCompleted
+                                ? 'This day will become green because all exercises were completed. Keep the workout saved and switch dates?'
+                                : 'This day will become yellow because it has saved exercises that were not completed. Keep the workout saved and switch dates?'
                     );
 
                     if (!shouldLeave) {
@@ -849,6 +880,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
 
+                    syncWorkoutCompletionState(previousDate);
+                } else if (previousItems.length > 0 && previousItems.every((item) => item.checked === true)) {
                     syncWorkoutCompletionState(previousDate);
                 } else {
                     restoreConfirmedWorkoutState(previousDate);
@@ -1264,8 +1297,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 saveWorkoutForDate(dateKey, items);
 
-                if (!items.length && dayCompletionStore.get(dateKey) === 'day-done') {
+                if (!items.length) {
+                    clearedWorkoutDates.delete(dateKey);
                     dayCompletionStore.delete(dateKey);
+                    persistWorkoutSessionState();
                 }
 
                 if (confirmedWorkoutStore.has(dateKey)) {
@@ -1723,7 +1758,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         completeWorkoutForSelectedDate(selectedKey);
-        exitPromptSuppressedForDate = selectedKey;
     });
 
 });
