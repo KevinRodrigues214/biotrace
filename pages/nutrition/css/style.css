@@ -773,23 +773,6 @@
   font-size: 10px;
 }
 
-.goal-chart-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 16px;
-  padding-top: 13px;
-  border-top: 1px solid rgba(80, 180, 255, 0.15);
-  color: var(--color-text-muted);
-  font-size: 11px;
-}
-
-.goal-chart-placeholder strong {
-  color: #55dfe9;
-  font-size: 14px;
-}
-
-
 /* =========================================
    GOALS FORM
 ========================================= */
@@ -2568,4 +2551,20 @@ margin-top: 40px;
   color: #55dfe9;
   font-size: 13px;
   font-weight: 700;
+}
+
+.goal-choice.is-selected {
+  border-color: rgba(61, 220, 132, 0.8);
+  background: rgba(35, 150, 105, 0.25);
+  box-shadow: 0 0 14px rgba(61, 220, 132, 0.2);
+}
+
+.quantity-form-group.is-disabled {
+  opacity: 0.55;
+}
+
+.quantity-form-group.is-disabled label::after {
+  content: ' (Individual Food only)';
+  color: rgba(160, 190, 200, 0.7);
+  font-size: 10px;
 }

@@ -418,7 +418,22 @@ document.addEventListener('DOMContentLoaded', () => {
   // INICIALIZAR CARROSSEL
   // =========================================
 
+  if (window.location.hash === '#goal-panel') {
+    order = [4, 1, 2, 3];
+  }
+
   updateCarousel();
+
+  if (window.location.hash === '#goal-panel') {
+    const nutritionPage = document.querySelector('.nutrition-page');
+
+    requestAnimationFrame(() => {
+      window.scrollTo({
+        top: nutritionPage?.offsetTop || 0,
+        behavior: 'smooth'
+      });
+    });
+  }
 
 });
 
@@ -430,6 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const nutritionMealsByDate = new Map();
 let selectedNutritionDate = null;
+let selectedBodyGoal = null;
 
 function getUserStorageSlug() {
   return window.UserStorage.getCurrentUserSlug();
@@ -446,6 +462,7 @@ function loadNutritionSessionState() {
 function persistNutritionSessionState() {
   const payload = {
     selectedDate: selectedNutritionDate,
+    selectedBodyGoal,
     goals: nutritionGoals,
     meals: [...nutritionMealsByDate.entries()].map(([dateKey, meals]) => [dateKey, meals])
   };
@@ -469,9 +486,28 @@ function hydrateNutritionSessionState() {
     nutritionGoals = saved.goals;
   }
 
+  if (saved.selectedBodyGoal) {
+    selectedBodyGoal = saved.selectedBodyGoal;
+  }
+
   if (saved.selectedDate) {
     selectedNutritionDate = saved.selectedDate;
   }
+}
+
+function setupBodyGoalChoices() {
+  document.querySelectorAll('.goal-choice[data-goal]').forEach((button) => {
+    button.classList.toggle('is-selected', button.dataset.goal === selectedBodyGoal);
+
+    button.addEventListener('click', () => {
+      selectedBodyGoal = button.dataset.goal;
+      persistNutritionSessionState();
+      document.querySelectorAll('.goal-choice[data-goal]').forEach((choice) => {
+        choice.classList.toggle('is-selected', choice === button);
+      });
+      window.location.href = '../../pages/hologram/';
+    });
+  });
 }
 
 function getNutritionTodayKey() {
@@ -589,6 +625,7 @@ function renderGoalsForm() {
 
 document.addEventListener('DOMContentLoaded', () => {
   hydrateNutritionSessionState();
+  setupBodyGoalChoices();
   renderGoalsCard();
 });
 
@@ -1527,6 +1564,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const mealQuantityInput =
     document.querySelector('#mealQuantity');
 
+  const mealUnitInput =
+    document.querySelector('#mealUnit');
+
+  const quantityFormGroup =
+    document.querySelector('.quantity-form-group');
+
   const caloriesInput =
     document.querySelector('#calories');
 
@@ -1550,6 +1593,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentMealCard = null;
   let currentMealIndex = -1;
+
+  function updateQuantityAvailability() {
+    const isIndividualFood = mealTypeInput?.value === 'individual-food';
+
+    if (mealQuantityInput) {
+      mealQuantityInput.disabled = !isIndividualFood;
+      if (!isIndividualFood) {
+        mealQuantityInput.value = '';
+        clearFieldError(mealQuantityInput);
+      }
+    }
+
+    if (mealUnitInput) {
+      mealUnitInput.disabled = !isIndividualFood;
+    }
+
+    quantityFormGroup?.classList.toggle('is-disabled', !isIndividualFood);
+  }
     // =========================================
   // CONTROLE DO SCROLL DA PÁGINA
   // =========================================
@@ -1670,6 +1731,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mealUnit) {
       mealUnit.value = 'g';
     }
+
+    updateQuantityAvailability();
   }
 
   function loadMealForm(card) {
@@ -1689,10 +1752,11 @@ document.addEventListener('DOMContentLoaded', () => {
     sodiumInput.value = card.dataset.sodium || '';
     sugarInput.value = card.dataset.sugar || '';
 
-    const mealUnit = document.querySelector('#mealUnit');
-    if (mealUnit) {
-      mealUnit.value = card.dataset.mealUnit || 'g';
+    if (mealUnitInput) {
+      mealUnitInput.value = card.dataset.mealUnit || 'g';
     }
+
+    updateQuantityAvailability();
   }
 
   function openMealForm(card = null) {
@@ -2006,7 +2070,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { field: mealNameInput, type: 'text', label: 'the meal name' },
     { field: mealTypeInput, type: 'required', label: 'Meal type' },
     { field: mealTimeInput, type: 'required', label: 'Time' },
-    { field: mealQuantityInput, type: 'number', label: 'Quantity' },
+    { field: mealQuantityInput, type: 'number', label: 'Quantity', optional: true },
     { field: caloriesInput, type: 'number', label: 'Calories' },
     { field: proteinInput, type: 'number', label: 'Protein' },
     { field: carbsInput, type: 'number', label: 'Carbohydrates' },
@@ -2025,7 +2089,10 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (type === 'required') {
         validateRequiredField(field, label);
       } else {
-        validateNumericField(field, label, optional);
+        const quantityIsOptional = field === mealQuantityInput
+          ? mealTypeInput.value !== 'individual-food'
+          : optional;
+        validateNumericField(field, label, quantityIsOptional);
       }
     });
 
@@ -2036,6 +2103,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (field === mealTypeInput && mealFormTitle) {
         mealFormTitle.textContent = mealTypeInput.options[mealTypeInput.selectedIndex].text;
+      }
+
+      if (field === mealTypeInput) {
+        updateQuantityAvailability();
       }
     });
   });
@@ -2061,14 +2132,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function collectMealData() {
-    const mealUnit = document.querySelector('#mealUnit');
-
     return {
       mealName: mealNameInput.value.trim(),
       mealType: mealTypeInput.value,
       mealTime: mealTimeInput.value,
       mealQuantity: mealQuantityInput.value.trim(),
-      mealUnit: mealUnit ? mealUnit.value : 'g',
+      mealUnit: mealUnitInput ? mealUnitInput.value : 'g',
       calories: caloriesInput.value.trim(),
       protein: proteinInput.value.trim(),
       carbs: carbsInput.value.trim(),
@@ -2188,7 +2257,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return validateRequiredField(field, label);
           }
 
-          return validateNumericField(field, label, optional);
+          const quantityIsOptional = field === mealQuantityInput
+            ? mealTypeInput.value !== 'individual-food'
+            : optional;
+          return validateNumericField(field, label, quantityIsOptional);
         }).every(Boolean);
 
         if (!fieldsValid) {

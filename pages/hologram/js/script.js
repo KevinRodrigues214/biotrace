@@ -23,7 +23,22 @@ let hologramEntryTime = 0;
 
 const muscleMaterials = {};
 
+// =====================================================
+// INTERAÇÃO COM OS MÚSCULOS
+// =====================================================
 
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+let hoveredMuscle = null;
+let selectedMuscle = null;
+
+const interactiveMuscles = [
+  'muscle_chest',
+  'muscle_abs'
+];
+
+const muscleInteractionData = {};
 // =====================================================
 // CORES DOS STATUS
 // =====================================================
@@ -122,6 +137,232 @@ function applySavedWorkoutStatuses() {
     setMuscleStatus(muscleName, getRecoveryStatus(timestamp));
   });
 }
+
+function updateMuscleMetrics(muscleName = selectedMuscle?.name || null) {
+  const recoveryBar = document.getElementById('recoveryBar');
+  const recoveryValue = document.getElementById('recoveryValue');
+  const fatigueBar = document.getElementById('fatigueBar');
+  const fatigueValue = document.getElementById('fatigueValue');
+  const selectedMuscleLabel = document.getElementById('selectedMuscleLabel');
+  const recoveryTimeValue = document.getElementById('recoveryTimeValue');
+
+  if (!recoveryBar || !recoveryValue || !fatigueBar || !fatigueValue) {
+    return;
+  }
+
+  const latestWorkout = muscleName
+    ? getLatestMuscleWorkouts()[muscleName]
+    : null;
+  const elapsedHours = latestWorkout
+    ? Math.max(0, Date.now() - latestWorkout) / (1000 * 60 * 60)
+    : 48;
+  const recovery = Math.min(100, (elapsedHours / 48) * 100);
+  const fatigue = 100 - recovery;
+  const remainingHours = Math.max(0, 48 - elapsedHours);
+
+  recoveryBar.style.width = `${recovery}%`;
+  recoveryValue.textContent = `${Math.round(recovery)}%`;
+  fatigueBar.style.width = `${fatigue}%`;
+  fatigueValue.textContent = `${Math.round(fatigue)}%`;
+
+  if (selectedMuscleLabel) {
+    selectedMuscleLabel.textContent = muscleName
+      ? muscleName.replace('muscle_', '').replace('_', ' ').toUpperCase()
+      : 'Select a muscle';
+  }
+
+  if (recoveryTimeValue) {
+    recoveryTimeValue.textContent = remainingHours > 0
+      ? `${Math.ceil(remainingHours)}h left`
+      : 'Ready';
+  }
+}
+
+function calculateDailyTargets() {
+  const profile = window.UserStorage?.readUserData('profile_data', {});
+  const nutrition = window.UserStorage?.readUserData('nutrition_session_data', {});
+  const age = Number(profile?.profileAge);
+  const height = Number(profile?.profileHeight);
+  const weight = Number(profile?.profileWeight);
+  const goal = nutrition?.selectedBodyGoal;
+
+  if (!age || !height || !weight || !goal) {
+    return null;
+  }
+
+  const gender = profile?.profileGender;
+  const genderConstant = gender === 'male'
+    ? 5
+    : gender === 'female'
+      ? -161
+      : -78;
+  const basalMetabolicRate = (10 * weight) + (6.25 * height) - (5 * age) + genderConstant;
+  const sedentaryMaintenance = basalMetabolicRate * 1.2;
+  const goalMultiplier = goal === 'loss' ? 0.8 : goal === 'gain' ? 1.1 : 1;
+  const calories = Math.max(1200, Math.round(sedentaryMaintenance * goalMultiplier));
+  const proteinPerKg = goal === 'loss' || goal === 'gain' ? 2 : 1.6;
+  const protein = Math.round(weight * proteinPerKg);
+  const fat = Math.round((calories * 0.25) / 9);
+  const carbs = Math.max(0, Math.round((calories - (protein * 4) - (fat * 9)) / 4));
+
+  return { goal, calories, protein, carbs, fat };
+}
+
+function updateGoalMetrics() {
+  const targets = calculateDailyTargets();
+  const goalLabels = {
+    loss: 'Weight Loss',
+    maintenance: 'Maintenance',
+    gain: 'Weight Gain'
+  };
+  const caloriesValue = document.getElementById('goalCaloriesValue');
+  const proteinValue = document.getElementById('goalProteinValue');
+  const carbsValue = document.getElementById('goalCarbsValue');
+  const fatValue = document.getElementById('goalFatValue');
+  const title = document.getElementById('goalMetricTitle');
+  const status = document.getElementById('goalMetricStatus');
+  const message = document.getElementById('goalMetricMessage');
+
+  if (!caloriesValue || !proteinValue || !carbsValue || !fatValue) {
+    return;
+  }
+
+  if (!targets) {
+    caloriesValue.textContent = '-- kcal';
+    proteinValue.textContent = '-- g';
+    carbsValue.textContent = '-- g';
+    fatValue.textContent = '-- g';
+    if (title) title.textContent = 'Daily Target';
+    if (status) status.textContent = 'SETUP';
+    if (message) message.textContent = 'Complete your Profile and choose a goal in Nutrition.';
+    return;
+  }
+
+  caloriesValue.textContent = `${targets.calories} kcal`;
+  proteinValue.textContent = `${targets.protein} g`;
+  carbsValue.textContent = `${targets.carbs} g`;
+  fatValue.textContent = `${targets.fat} g`;
+  if (title) title.textContent = goalLabels[targets.goal];
+  if (status) status.textContent = 'DAILY';
+  if (message) message.textContent = 'Estimated without exercise intensity.';
+}
+
+function getLocalDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getGoalChartData() {
+  const nutrition = window.UserStorage?.readUserData('nutrition_session_data', {});
+  const mealsByDate = new Map(nutrition?.meals || []);
+  const days = [];
+
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - offset);
+    const dateKey = getLocalDateKey(date);
+    const meals = Array.isArray(mealsByDate.get(dateKey))
+      ? mealsByDate.get(dateKey)
+      : [];
+    const consumed = meals.reduce((total, meal) => total + Number(meal?.calories || 0), 0);
+
+    days.push({
+      label: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      consumed: Number.isFinite(consumed) ? consumed : 0
+    });
+  }
+
+  return days;
+}
+
+function renderGoalChart() {
+  const chart = document.getElementById('goalLineChart');
+  const summary = document.getElementById('goalChartSummary');
+
+  if (!chart || !summary) {
+    return;
+  }
+
+  const targets = calculateDailyTargets();
+  const days = getGoalChartData();
+
+  if (!targets) {
+    chart.innerHTML = '<text x="360" y="150" text-anchor="middle" class="chart-axis-label">Complete your Profile and choose a goal first.</text>';
+    summary.textContent = 'The chart needs your body data and a selected goal.';
+    return;
+  }
+
+  const width = 720;
+  const height = 300;
+  const padding = { top: 20, right: 20, bottom: 42, left: 52 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const highestValue = Math.max(targets.calories, ...days.map((day) => day.consumed), 1);
+  const maxValue = Math.ceil((highestValue * 1.15) / 250) * 250;
+  const x = (index) => padding.left + (plotWidth * index) / (days.length - 1);
+  const y = (value) => padding.top + plotHeight - (value / maxValue) * plotHeight;
+  const targetY = y(targets.calories);
+  const consumedPath = days
+    .map((day, index) => `${index === 0 ? 'M' : 'L'} ${x(index).toFixed(1)} ${y(day.consumed).toFixed(1)}`)
+    .join(' ');
+  const gridLines = [0, 0.25, 0.5, 0.75, 1]
+    .map((ratio) => {
+      const value = Math.round(maxValue * ratio);
+      const lineY = y(value);
+      return `<line class="chart-grid" x1="${padding.left}" y1="${lineY}" x2="${width - padding.right}" y2="${lineY}" /><text class="chart-axis-label" x="${padding.left - 10}" y="${lineY + 4}" text-anchor="end">${value}</text>`;
+    })
+    .join('');
+  const dayLabels = days
+    .map((day, index) => `<text class="chart-day-label" x="${x(index)}" y="${height - 13}" text-anchor="middle">${day.label}</text>`)
+    .join('');
+  const dots = days
+    .map((day, index) => `<circle class="chart-consumed-dot" cx="${x(index)}" cy="${y(day.consumed)}" r="4"><title>${day.label}: ${day.consumed} kcal</title></circle>`)
+    .join('');
+
+  chart.innerHTML = `${gridLines}<line class="chart-target-line" x1="${padding.left}" y1="${targetY}" x2="${width - padding.right}" y2="${targetY}" /><path class="chart-consumed-line" d="${consumedPath}" />${dots}${dayLabels}`;
+  summary.textContent = `${targets.goal === 'loss' ? 'Weight loss' : targets.goal === 'gain' ? 'Weight gain' : 'Maintenance'} · target ${targets.calories} kcal/day · exercise intensity excluded`;
+}
+
+function setupGoalChart() {
+  const modal = document.getElementById('goalChartModal');
+  const openButton = document.getElementById('openGoalChartButton');
+
+  if (!modal || !openButton) {
+    return;
+  }
+
+  const close = () => {
+    modal.hidden = true;
+    document.body.classList.remove('goal-chart-open');
+  };
+
+  openButton.addEventListener('click', () => {
+    renderGoalChart();
+    modal.hidden = false;
+    document.body.classList.add('goal-chart-open');
+  });
+
+  modal.querySelectorAll('[data-close-goal-chart]').forEach((element) => {
+    element.addEventListener('click', close);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !modal.hidden) {
+      close();
+    }
+  });
+}
+
+setupGoalChart();
+
+updateGoalMetrics();
+setInterval(() => {
+  updateMuscleMetrics();
+  updateGoalMetrics();
+}, 1000);
 
 
 // =====================================================
@@ -430,7 +671,239 @@ function setMuscleStatus(
 
 }
 
+// =====================================================
+// MUSCLE INTERACTION
+// =====================================================
 
+function setupMuscleInteraction() {
+
+  interactiveMuscles.forEach((muscleName) => {
+
+    const muscle = model?.getObjectByName(muscleName);
+
+    if (!muscle || !muscle.isMesh) {
+      console.warn(
+        `Músculo interativo não encontrado: ${muscleName}`
+      );
+      return;
+    }
+
+    muscleInteractionData[muscleName] = {
+
+      originalPosition: muscle.position.clone(),
+
+      originalScale: muscle.scale.clone(),
+
+      targetScale: muscle.scale.clone(),
+
+      targetPosition: muscle.position.clone(),
+
+      hover: false,
+
+      selected: false
+
+    };
+
+  });
+
+}
+
+
+function getMuscleUnderMouse() {
+
+  if (!model) return null;
+
+  raycaster.setFromCamera(mouse, camera);
+
+  const muscles = interactiveMuscles
+    .map(name => model.getObjectByName(name))
+    .filter(Boolean);
+
+  const intersections =
+    raycaster.intersectObjects(muscles, true);
+
+  if (intersections.length === 0) {
+    return null;
+  }
+
+  let object = intersections[0].object;
+
+  while (
+    object &&
+    !interactiveMuscles.includes(object.name)
+  ) {
+    object = object.parent;
+  }
+
+  return object || null;
+
+}
+
+
+function setHoveredMuscle(muscle) {
+
+  if (hoveredMuscle === muscle) {
+    return;
+  }
+
+  hoveredMuscle = muscle;
+
+  if (muscle) {
+
+    container.style.cursor = 'pointer';
+
+  } else {
+
+    container.style.cursor = 'default';
+
+  }
+
+}
+
+
+function selectMuscle(muscle) {
+
+  if (!muscle) {
+    deselectMuscle();
+    return;
+  }
+
+  // Se clicar no mesmo músculo, desmarca
+  if (selectedMuscle === muscle) {
+    deselectMuscle();
+    return;
+  }
+
+  // Resetar seleção anterior
+  if (selectedMuscle) {
+
+    const previousData =
+      muscleInteractionData[selectedMuscle.name];
+
+    if (previousData) {
+
+      previousData.selected = false;
+
+      previousData.targetScale =
+        previousData.originalScale.clone();
+
+      previousData.targetPosition =
+        previousData.originalPosition.clone();
+
+    }
+
+  }
+
+  selectedMuscle = muscle;
+
+  const data =
+    muscleInteractionData[muscle.name];
+
+  if (!data) return;
+
+  data.selected = true;
+
+  // Aumenta um pouco o músculo
+  data.targetScale =
+    data.originalScale.clone().multiplyScalar(1.20);
+
+  // Traz o músculo em direção à câmera
+  const direction = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+
+  data.targetPosition =
+    data.originalPosition.clone().add(
+      direction.clone().multiplyScalar(-0.15)
+    );
+
+  updateMuscleMetrics(muscle.name);
+
+}
+
+
+function deselectMuscle() {
+
+  if (!selectedMuscle) {
+    return;
+  }
+
+  const data =
+    muscleInteractionData[selectedMuscle.name];
+
+  if (data) {
+
+    data.selected = false;
+
+    data.targetScale =
+      data.originalScale.clone();
+
+    data.targetPosition =
+      data.originalPosition.clone();
+
+  }
+
+  selectedMuscle = null;
+  updateMuscleMetrics();
+
+}
+
+
+function updateMuscleInteraction() {
+
+  Object.entries(muscleInteractionData)
+    .forEach(([muscleName, data]) => {
+
+      const muscle =
+        model?.getObjectByName(muscleName);
+
+      if (!muscle) return;
+
+      muscle.scale.lerp(
+        data.targetScale,
+        0.12
+      );
+
+      muscle.position.lerp(
+        data.targetPosition,
+        0.12
+      );
+
+    });
+
+}
+container.addEventListener('mousemove', (event) => {
+
+  const rect =
+    renderer.domElement.getBoundingClientRect();
+
+  mouse.x =
+    ((event.clientX - rect.left) / rect.width) * 2 - 1;
+
+  mouse.y =
+    -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  const muscle =
+    getMuscleUnderMouse();
+
+  setHoveredMuscle(muscle);
+
+});
+container.addEventListener('click', () => {
+
+  const muscle =
+    getMuscleUnderMouse();
+
+  if (muscle) {
+
+    selectMuscle(muscle);
+
+  } else {
+
+    deselectMuscle();
+
+  }
+
+});
 // =====================================================
 // WIREFRAME
 // =====================================================
@@ -904,7 +1377,7 @@ loader.load(
     );
 
     applySavedWorkoutStatuses();
-
+    setupMuscleInteraction();
   printMuscleConsole()
   },
 
@@ -1299,7 +1772,7 @@ function animate(time) {
   // ===================================================
   // RENDER
   // ===================================================
-
+  updateMuscleInteraction();
   renderer.render(
 
     scene,

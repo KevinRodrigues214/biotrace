@@ -165,32 +165,27 @@
 
         <!-- PANEL 4 -->
 
-        <article class="nutrition-panel panel-4">
+        <article class="nutrition-panel panel-4" id="goal-panel">
 
           <h2>
             What is your goal?
           </h2>
 
           <div class="goal-choice-list">
-            <button class="goal-choice" type="button">
+            <button class="goal-choice" type="button" data-goal="loss">
               <span>Calorie Deficit</span>
               <small>Weight loss</small>
             </button>
 
-            <button class="goal-choice" type="button">
+            <button class="goal-choice" type="button" data-goal="gain">
               <span>Calorie Surplus</span>
               <small>Weight gain</small>
             </button>
 
-            <button class="goal-choice" type="button">
+            <button class="goal-choice" type="button" data-goal="maintenance">
               <span>Maintenance</span>
               <small>Maintain weight</small>
             </button>
-          </div>
-
-          <div class="goal-chart-placeholder">
-            <span>Calorie target</span>
-            <strong>-- kcal</strong>
           </div>
 
         </article>
@@ -566,6 +561,10 @@
                   Snack
                 </option>
 
+                <option value="individual-food">
+                  Individual Food
+                </option>
+
               </select>
 
               <small class="field-error-message" aria-live="polite"></small>
@@ -597,7 +596,7 @@
 
           <!-- QUANTITY -->
 
-          <div class="meal-form-group">
+          <div class="meal-form-group quantity-form-group is-disabled">
 
             <label for="mealQuantity">
               Quantity
@@ -611,10 +610,11 @@
                 id="mealQuantity"
                 placeholder="250"
                 min="0"
+                disabled
               >
 
 
-              <select id="mealUnit">
+              <select id="mealUnit" disabled>
 
                 <option value="g">
                   g

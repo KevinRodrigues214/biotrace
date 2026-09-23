@@ -21,6 +21,30 @@
   <main class="hologram-page">
 
     <section class="hologram-container">
+      <aside class="goal-link-panel">
+        <div class="panel-header">
+          <span id="goalMetricTitle">Daily Target</span>
+          <span class="panel-status" id="goalMetricStatus">GOAL</span>
+        </div>
+        <div class="goal-metric-list">
+          <div class="goal-metric-row"><span>Calories</span><strong id="goalCaloriesValue">-- kcal</strong></div>
+          <div class="goal-metric-row"><span>Protein</span><strong id="goalProteinValue">-- g</strong></div>
+          <div class="goal-metric-row"><span>Carbohydrates</span><strong id="goalCarbsValue">-- g</strong></div>
+          <div class="goal-metric-row"><span>Total Fat</span><strong id="goalFatValue">-- g</strong></div>
+        </div>
+        <p class="goal-link-copy" id="goalMetricMessage">Choose a goal to see your daily target.</p>
+        <div class="goal-link-actions">
+          <a class="goal-link-button" href="../../pages/nutrition/#goal-panel">
+            <span>Choose goal</span>
+            <span aria-hidden="true">→</span>
+          </a>
+          <button class="goal-chart-button" id="openGoalChartButton" type="button">
+            <span>View chart</span>
+            <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+      </aside>
+
       <!-- ========================= -->
       <!-- HOLOGRAMA PRINCIPAL -->
       <!-- ========================= -->
@@ -42,63 +66,35 @@
 
         </div>
 
-        <div class="energy-chart">
+        <div class="energy-chart muscle-metrics" aria-live="polite">
 
-          <svg
-            class="energy-chart-svg"
-            viewBox="0 0 300 160"
-            preserveAspectRatio="none"
-          >
+          <div class="metric-bar-row">
+            <div class="metric-bar-heading">
+              <span>Recovery</span>
+              <strong id="recoveryValue">100%</strong>
+            </div>
+            <div class="metric-bar-track">
+              <span id="recoveryBar" class="metric-bar-fill recovery-fill"></span>
+            </div>
+          </div>
 
-            <line x1="0" y1="30" x2="300" y2="30" />
-            <line x1="0" y1="65" x2="300" y2="65" />
-            <line x1="0" y1="100" x2="300" y2="100" />
-            <line x1="0" y1="135" x2="300" y2="135" />
-
-            <path
-              class="energy-area"
-              d="
-                M0 125
-                C35 120, 45 110, 75 115
-                C105 120, 120 90, 145 95
-                C170 100, 185 65, 210 70
-                C235 75, 255 50, 275 55
-                C290 58, 295 45, 300 40
-                L300 160
-                L0 160
-                Z
-              "
-            />
-
-            <path
-              class="energy-line"
-              d="
-                M0 125
-                C35 120, 45 110, 75 115
-                C105 120, 120 90, 145 95
-                C170 100, 185 65, 210 70
-                C235 75, 255 50, 275 55
-                C290 58, 295 45, 300 40
-              "
-            />
-
-          </svg>
-
-          <div class="chart-labels">
-            <span>0h</span>
-            <span>12h</span>
-            <span>24h</span>
-            <span>36h</span>
-            <span>48h</span>
+          <div class="metric-bar-row">
+            <div class="metric-bar-heading">
+              <span>Fatigue</span>
+              <strong id="fatigueValue">0%</strong>
+            </div>
+            <div class="metric-bar-track">
+              <span id="fatigueBar" class="metric-bar-fill fatigue-fill"></span>
+            </div>
           </div>
 
         </div>
 
         <div class="energy-info">
 
-          <span>Recovery</span>
+          <span id="selectedMuscleLabel">Select a muscle</span>
 
-          <strong>68%</strong>
+          <strong id="recoveryTimeValue">Ready</strong>
 
         </div>
 
@@ -107,6 +103,27 @@
     </section>
 
   </main>
+
+  <div class="goal-chart-modal" id="goalChartModal" hidden>
+    <div class="goal-chart-backdrop" data-close-goal-chart></div>
+    <section class="goal-chart-dialog" role="dialog" aria-modal="true" aria-labelledby="goalChartTitle">
+      <div class="goal-chart-dialog-header">
+        <div>
+          <span class="panel-status">NUTRITION TRACKING</span>
+          <h2 id="goalChartTitle">Calorie progress</h2>
+        </div>
+        <button class="goal-chart-close" type="button" data-close-goal-chart aria-label="Close chart">×</button>
+      </div>
+      <p class="goal-chart-summary" id="goalChartSummary">Choose a goal and log meals in Nutrition to see your progress.</p>
+      <div class="goal-line-chart-wrap">
+        <svg id="goalLineChart" class="goal-line-chart" viewBox="0 0 720 300" role="img" aria-label="Calories consumed compared with daily target"></svg>
+      </div>
+      <div class="goal-chart-legend">
+        <span><i class="goal-legend-line target"></i>Daily target</span>
+        <span><i class="goal-legend-line consumed"></i>Consumed</span>
+      </div>
+    </section>
+  </div>
 
 
   <!-- JS global -->
