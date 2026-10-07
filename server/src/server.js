@@ -4,6 +4,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
+const authRoutes = require('./routes/auth');
+const profileRoutes = require('./routes/profile');
+const nutritionGoalRoutes = require('./routes/nutritionGoals');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -16,6 +20,10 @@ app.get('/api/health', (req, res) => {
     service: 'BioTrace API'
   });
 });
+
+app.use('/api/auth', authRoutes);
+app.use('/api', profileRoutes);
+app.use('/api', nutritionGoalRoutes);
 
 async function startServer() {
   try {
