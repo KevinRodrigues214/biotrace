@@ -70,14 +70,47 @@ router.post('/profile', requireAuth, async (req, res) => {
                 message: 'Profile already exists for this user.'
             });
         }
+        const ageNum = Number(age);
+        const heightNum = Number(height);
+        const weightNum = Number(weight);
 
+        const validGenders = ['male', 'female', 'other', 'prefer-not-to-say'];
+        if (!validGenders.includes(gender)) {
+            return res.status(400).json({
+                message: 'Invalid gender value.'
+            });
+        }
+        const minAge = 14;
+        if (ageNum < minAge) {
+            return res.status(400).json({
+                message: `Age must be at least ${minAge}.`
+            });
+        }
+        const minHeight = 50;
+        if (heightNum < minHeight) {
+            return res.status(400).json({
+                message: `Height must be at least ${minHeight} cm.`
+            });
+        }
+        const minWeight = 20;
+        if (weightNum < minWeight) {
+            return res.status(400).json({
+                message: `Weight must be at least ${minWeight} kg.`
+            });
+        }
+        const existingProfileByName = await Profile.findOne({ name });
+        if (existingProfileByName) {
+            return res.status(409).json({
+                message: 'Profile with this name already exists.'
+            });
+        }
         const profile = await Profile.create({
             user: userId,
             name,
-            age,
+            age: ageNum ,
             gender,
-            height,
-            weight
+            height: heightNum,
+            weight: weightNum
         });
 
         return res.status(201).json({
@@ -103,7 +136,40 @@ router.put('/profile', requireAuth, async (req, res) => {
         if (!profile) {
             return res.status(404).json({ message: 'Profile not found.' });
         }
+        const ageNum = Number(age);
+        const heightNum = Number(height);
+        const weightNum = Number(weight);
 
+        const validGenders = ['male', 'female', 'other', 'prefer-not-to-say'];
+        if (!validGenders.includes(gender)) {
+            return res.status(400).json({
+                message: 'Invalid gender value.'
+            });
+        }
+        const minAge = 14;
+        if (ageNum < minAge) {
+            return res.status(400).json({
+                message: `Age must be at least ${minAge}.`
+            });
+        }
+        const minHeight = 50;
+        if (heightNum < minHeight) {
+            return res.status(400).json({
+                message: `Height must be at least ${minHeight} cm.`
+            });
+        }
+        const minWeight = 20;
+        if (weightNum < minWeight) {
+            return res.status(400).json({
+                message: `Weight must be at least ${minWeight} kg.`
+            });
+        }
+        const existingProfileByName = await Profile.findOne({ name });
+        if (existingProfileByName && existingProfileByName.user.toString() !== userId) {
+            return res.status(409).json({
+                message: 'Profile with this name already exists.'
+            });
+        }
         const updatedProfile = await Profile.findByIdAndUpdate(
             profile._id,
             { name, age, gender, height, weight },

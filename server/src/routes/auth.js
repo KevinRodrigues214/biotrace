@@ -20,7 +20,14 @@ router.post('/register', async (req, res) => {
     if (existingUser) {
       return res.status(409).json({ message: 'User already exists.' });
     }
-
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format.' });  
+    }
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long and contain at least one letter and one number.' });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
