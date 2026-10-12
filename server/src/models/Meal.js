@@ -50,15 +50,26 @@ const mealSchema = new mongoose.Schema({
   sugar: {
     type: Number,
     default: 0
-  },quantity: {
+  },
+  quantity: {
     type: Number,
     default: 1
-  },unit: {
+  },
+  unit: {
     type: String,
     default: 'serving'
+  },
+  legacyKey: {
+    type: String,
+    select: false
   }
 }, {
   timestamps: true
 });
+
+mealSchema.index(
+  { userId: 1, legacyKey: 1 },
+  { unique: true, partialFilterExpression: { legacyKey: { $type: 'string' } } }
+);
 
 module.exports = mongoose.model('Meal', mealSchema);

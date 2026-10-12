@@ -1,190 +1,172 @@
-
 const express = require('express');
-const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 
 const Profile = require('../models/Profile');
 const User = require('../models/User');
-
+const requireAuth = require('../middleware/requireAuth');
 const router = express.Router();
 
-function requireAuth(req, res, next) {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Token missing.' });
+function parseProfile(body) {
+    const { name, age, gender, height, weight } = body || {};
+    if (typeof name !== 'string' || !name.trim()) {
+        return { error: 'Name is required.' };
     }
 
-    try {
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (error) {
-        return res.status(401).json({ message: 'Invalid token.' });
+    const numericFields = { age, height, weight };
+    const values = {};
+    for (const [field, value] of Object.entries(numericFields)) {
+        const number = typeof value === 'number' ? value : Number(value);
+        if (value === '' || value === null || value === undefined || !Number.isFinite(number)) {
+            return { error: `${field} must be a valid number.` };
+        }
+        values[field] = number;
     }
+
+    if (!['male', 'female', 'other', 'prefer-not-to-say'].includes(gender)) {
+        return { error: 'Invalid gender value.' };
+    }
+    if (values.age < 14) {
+        return { error: 'Age must be at least 14.' };
+    }
+    if (values.height < 50) {
+        return { error: 'Height must be at least 50 cm.' };
+    }
+    if (values.weight < 20) {
+        return { error: 'Weight must be at least 20 kg.' };
+    }
+
+    return {
+        profile: {
+            age: values.age,
+            gender,
+            height: values.height,
+            weight: values.weight
+        },
+        name: name.trim()
+    };
+}
+
+function handleProfileError(res, error, action) {
+    if (
+        error instanceof mongoose.Error.ValidationError ||
+        error instanceof mongoose.Error.CastError
+    ) {
+        return res.status(400).json({ message: error.message });
+    }
+
+    console.error(`Profile ${action} error:`, error);
+    return res.status(500).json({ message: `Failed to ${action} profile.` });
 }
 
 router.get('/profile', requireAuth, async (req, res) => {
     try {
-        const userId = req.user.userId;
-
-        const profile = await Profile.findOne({ user: userId }).populate('user', 'name username email');
+        const profile = await Profile.findOne({ user: req.user.userId })
+            .populate('user', 'name username email');
 
         if (!profile) {
             return res.status(404).json({ message: 'Profile not found.' });
         }
 
+        return res.status(200).json({ message: 'Profile retrieved successfully.', profile });
+    } catch (error) {
+        return handleProfileError(res, error, 'retrieve');
+    }
+});
+
+router.patch('/profile/goal', requireAuth, async (req, res) => {
+    const { goalType } = req.body || {};
+    if (!['loss', 'gain', 'maintenance'].includes(goalType)) {
+        return res.status(400).json({ message: 'Invalid goal type.' });
+    }
+
+    try {
+        const profile = await Profile.findOneAndUpdate(
+            { user: req.user.userId },
+            { $set: { goalType } },
+            { new: true, runValidators: true }
+        ).populate('user', 'name username email');
+
+        if (!profile) {
+            return res.status(404).json({ message: 'Create your profile before choosing a nutrition goal.' });
+        }
+
         return res.status(200).json({
-            message: 'Profile retrieved successfully.',
+            message: 'Nutrition goal saved successfully.',
             profile
         });
     } catch (error) {
-        console.error('Profile retrieval error:', error);
-        return res.status(500).json({ message: 'Failed to retrieve profile.' });
+        return handleProfileError(res, error, 'update nutrition goal');
     }
 });
 
 router.post('/profile', requireAuth, async (req, res) => {
+    const { profile: profileData, name, error } = parseProfile(req.body);
+    if (error) {
+        return res.status(400).json({ message: error });
+    }
+
     try {
-        const { name, age, gender, height, weight } = req.body;
-        const userId = req.user.userId;
-
-        if (!name || !age || !gender || !height || !weight) {
-            return res.status(400).json({
-                message: 'All fields are required.'
-            });
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
         }
 
-        const existingUser = await User.findById(userId);
-
-        if (!existingUser) {
-            return res.status(404).json({
-                message: 'User not found.'
-            });
-        }
-
-        const existingProfile = await Profile.findOne({ user: userId });
-
+        const existingProfile = await Profile.findOne({ user: req.user.userId });
         if (existingProfile) {
-            return res.status(409).json({
-                message: 'Profile already exists for this user.'
-            });
+            return res.status(409).json({ message: 'Profile already exists for this user.' });
         }
-        const ageNum = Number(age);
-        const heightNum = Number(height);
-        const weightNum = Number(weight);
 
-        const validGenders = ['male', 'female', 'other', 'prefer-not-to-say'];
-        if (!validGenders.includes(gender)) {
-            return res.status(400).json({
-                message: 'Invalid gender value.'
-            });
-        }
-        const minAge = 14;
-        if (ageNum < minAge) {
-            return res.status(400).json({
-                message: `Age must be at least ${minAge}.`
-            });
-        }
-        const minHeight = 50;
-        if (heightNum < minHeight) {
-            return res.status(400).json({
-                message: `Height must be at least ${minHeight} cm.`
-            });
-        }
-        const minWeight = 20;
-        if (weightNum < minWeight) {
-            return res.status(400).json({
-                message: `Weight must be at least ${minWeight} kg.`
-            });
-        }
-        const existingProfileByName = await Profile.findOne({ name });
-        if (existingProfileByName) {
-            return res.status(409).json({
-                message: 'Profile with this name already exists.'
-            });
-        }
+        user.name = name;
+        await user.save();
+
         const profile = await Profile.create({
-            user: userId,
-            name,
-            age: ageNum ,
-            gender,
-            height: heightNum,
-            weight: weightNum
+            user: req.user.userId,
+            ...profileData
         });
+        await profile.populate('user', 'name username email');
 
-        return res.status(201).json({
-            message: 'Profile created successfully.',
-            profile
-        });
+        return res.status(201).json({ message: 'Profile created successfully.', profile });
     } catch (error) {
-        if (error.name === 'CastError') {
-            return res.status(400).json({ message: 'Invalid user ID.' });
-        }
-
-        console.error('Profile creation error:', error);
-        return res.status(500).json({ message: 'Failed to create profile.' });
+        return handleProfileError(res, error, 'create');
     }
 });
 
 router.put('/profile', requireAuth, async (req, res) => {
-    try {
-        const userId = req.user.userId;
-        const { name, age, gender, height, weight } = req.body;
+    const { profile: profileData, name, error } = parseProfile(req.body);
+    if (error) {
+        return res.status(400).json({ message: error });
+    }
 
-        const profile = await Profile.findOne({ user: userId });
+    try {
+        const profile = await Profile.findOne({ user: req.user.userId });
         if (!profile) {
             return res.status(404).json({ message: 'Profile not found.' });
         }
-        const ageNum = Number(age);
-        const heightNum = Number(height);
-        const weightNum = Number(weight);
 
-        const validGenders = ['male', 'female', 'other', 'prefer-not-to-say'];
-        if (!validGenders.includes(gender)) {
-            return res.status(400).json({
-                message: 'Invalid gender value.'
-            });
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
         }
-        const minAge = 14;
-        if (ageNum < minAge) {
-            return res.status(400).json({
-                message: `Age must be at least ${minAge}.`
-            });
-        }
-        const minHeight = 50;
-        if (heightNum < minHeight) {
-            return res.status(400).json({
-                message: `Height must be at least ${minHeight} cm.`
-            });
-        }
-        const minWeight = 20;
-        if (weightNum < minWeight) {
-            return res.status(400).json({
-                message: `Weight must be at least ${minWeight} kg.`
-            });
-        }
-        const existingProfileByName = await Profile.findOne({ name });
-        if (existingProfileByName && existingProfileByName.user.toString() !== userId) {
-            return res.status(409).json({
-                message: 'Profile with this name already exists.'
-            });
-        }
+
+        user.name = name;
+        await user.save();
+
         const updatedProfile = await Profile.findByIdAndUpdate(
             profile._id,
-            { name, age, gender, height, weight },
-            { new: true }
-        );
+            {
+                $set: profileData,
+                $unset: { name: '' }
+            },
+            { new: true, runValidators: true }
+        ).populate('user', 'name username email');
 
         return res.status(200).json({
             message: 'Profile updated successfully.',
             profile: updatedProfile
         });
     } catch (error) {
-        console.error('Profile update error:', error);
-        return res.status(500).json({ message: 'Failed to update profile.' });
+        return handleProfileError(res, error, 'update');
     }
 });
 
 module.exports = router;
-

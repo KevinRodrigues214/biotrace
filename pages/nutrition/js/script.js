@@ -444,8 +444,275 @@ document.addEventListener('DOMContentLoaded', () => {
 // =========================================
 
 const nutritionMealsByDate = new Map();
+const nutritionMealLoads = new Map();
+const nutritionMealLoadedDates = new Set();
+const nutritionDailySummaries = new Map();
+let nutritionWeeklyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0, mealCount: 0 };
+let nutritionApiErrorReported = false;
+let nutritionBackendReady = Promise.resolve();
 let selectedNutritionDate = null;
 let selectedBodyGoal = null;
+let nutritionGoals = null;
+
+function mealFromApi(meal) {
+  return {
+    mealId: meal._id,
+    mealName: meal.mealName,
+    mealType: meal.mealType,
+    mealTime: meal.mealTime,
+    mealQuantity: meal.quantity ?? '',
+    mealUnit: meal.unit || 'g',
+    calories: meal.calories,
+    protein: meal.protein ?? 0,
+    carbs: meal.carbs ?? 0,
+    fat: meal.fat ?? 0,
+    fiber: meal.fiber ?? 0,
+    sodium: meal.sodium ?? 0,
+    sugar: meal.sugar ?? 0
+  };
+}
+
+function mealsUpdated() {
+  persistNutritionSessionState();
+  document.dispatchEvent(new CustomEvent('nutrition:mealsUpdated'));
+}
+
+async function loadMealsForDate(dateKey, { force = false, notify = true } = {}) {
+  if (!force && nutritionMealLoadedDates.has(dateKey)) {
+    return nutritionMealsByDate.get(dateKey) || [];
+  }
+
+  if (!force && nutritionMealLoads.has(dateKey)) {
+    return nutritionMealLoads.get(dateKey);
+  }
+
+  const request = window.BioTraceApi.request(
+    `/meals?date=${encodeURIComponent(dateKey)}`,
+    { authenticated: true }
+  ).then((meals) => {
+    if (!Array.isArray(meals)) {
+      throw new Error('The meals API returned an invalid response.');
+    }
+
+    const normalizedMeals = meals.map(mealFromApi);
+    if (normalizedMeals.length) {
+      nutritionMealsByDate.set(dateKey, normalizedMeals);
+    } else {
+      nutritionMealsByDate.delete(dateKey);
+    }
+    nutritionMealLoadedDates.add(dateKey);
+
+    if (notify) {
+      mealsUpdated();
+    } else {
+      persistNutritionSessionState();
+    }
+    return normalizedMeals;
+  }).finally(() => {
+    nutritionMealLoads.delete(dateKey);
+  });
+
+  nutritionMealLoads.set(dateKey, request);
+  return request;
+}
+
+document.addEventListener('nutrition:dateSelected', (event) => {
+  const dateKey = event.detail && event.detail.date;
+  if (dateKey) {
+    nutritionBackendReady
+      .then(() => loadMealsForDate(dateKey))
+      .catch(reportNutritionApiError);
+  }
+});
+
+function reportNutritionApiError(error) {
+  console.error('Nutrition API error:', error);
+  if (!nutritionApiErrorReported) {
+    nutritionApiErrorReported = true;
+    window.alert(error.message || 'Unable to load meals from the server.');
+  }
+}
+
+function getLastSevenNutritionDateKeys() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return Array.from({ length: 7 }, (_, offset) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - offset);
+    return getNutritionDateKey(date);
+  });
+}
+
+function getNutritionDateKey(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0')
+  ].join('-');
+}
+
+function getNutritionSummaryRange(days) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const from = new Date(today);
+  from.setDate(today.getDate() - days + 1);
+  return { from: getNutritionDateKey(from), to: getNutritionDateKey(today) };
+}
+
+async function refreshNutritionSummary() {
+  const range = getNutritionSummaryRange(35);
+  const weeklyRange = getNutritionSummaryRange(7);
+  const [calendarSummary, weeklySummary] = await Promise.all([
+    window.BioTraceApi.request(
+      `/nutrition/summary?from=${range.from}&to=${range.to}`,
+      { authenticated: true }
+    ),
+    window.BioTraceApi.request(
+      `/nutrition/summary?from=${weeklyRange.from}&to=${weeklyRange.to}`,
+      { authenticated: true }
+    )
+  ]);
+
+  nutritionApiErrorReported = false;
+  nutritionDailySummaries.clear();
+  calendarSummary.days.forEach((day) => nutritionDailySummaries.set(day.date, day));
+  nutritionWeeklyTotals = weeklySummary.totals;
+}
+
+async function getNutritionGoalFromApi() {
+  try {
+    const response = await window.BioTraceApi.request('/nutrition-goal', { authenticated: true });
+    nutritionApiErrorReported = false;
+    return response.nutritionGoal;
+  } catch (error) {
+    if (error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+function goalFromApi(goal) {
+  return {
+    goalType: goal.goalType,
+    calories: goal.calories,
+    protein: goal.protein,
+    carbs: goal.carbohydrates,
+    fat: goal.fats
+  };
+}
+
+function goalPayload(goal, goalType) {
+  return {
+    goalType: ['loss', 'gain', 'maintenance'].includes(goalType) ? goalType : 'maintenance',
+    calories: Number(goal.calories),
+    protein: Number(goal.protein),
+    carbohydrates: Number(goal.carbs),
+    fats: Number(goal.fat)
+  };
+}
+
+async function migrateLegacyNutritionData() {
+  const saved = loadNutritionSessionState();
+  const migrationUser = sessionStorage.getItem('auth_user_id') || getUserStorageSlug();
+  const migrationKey = `nutrition_legacy_migrated_${migrationUser}`;
+  const alreadyMigrated = sessionStorage.getItem(migrationKey) === 'true';
+  let legacyGoalPending = false;
+
+  if (!alreadyMigrated) {
+    if (['loss', 'gain', 'maintenance'].includes(saved.selectedBodyGoal)) {
+      try {
+        await window.BioTraceApi.request('/profile/goal', {
+          method: 'PATCH',
+          authenticated: true,
+          body: { goalType: saved.selectedBodyGoal }
+        });
+      } catch (error) {
+        if (error.status !== 404) {
+          throw error;
+        }
+        legacyGoalPending = true;
+      }
+    }
+
+    const existingGoal = await getNutritionGoalFromApi();
+    if (!existingGoal && saved.goals) {
+      const goal = await window.BioTraceApi.request('/nutrition-goal', {
+        method: 'PUT',
+        authenticated: true,
+        body: goalPayload(saved.goals, saved.selectedBodyGoal)
+      });
+      nutritionGoals = goalFromApi(goal.nutritionGoal);
+    }
+
+    const legacyMeals = [];
+    if (Array.isArray(saved.meals)) {
+      saved.meals.forEach(([date, meals]) => {
+        if (!Array.isArray(meals)) {
+          return;
+        }
+        meals.forEach((meal, index) => {
+          if (meal) {
+            legacyMeals.push({
+              ...meal,
+              date,
+              legacyKey: `${date}-${index}`
+            });
+          }
+        });
+      });
+    }
+
+    if (legacyMeals.length) {
+      await window.BioTraceApi.request('/meals/import-legacy', {
+        method: 'POST',
+        authenticated: true,
+        body: { meals: legacyMeals }
+      });
+    }
+
+    if (!legacyGoalPending) {
+      sessionStorage.setItem(migrationKey, 'true');
+    }
+  }
+
+  try {
+    const response = await window.BioTraceApi.request('/profile', { authenticated: true });
+    selectedBodyGoal = response.profile.goalType || null;
+  } catch (error) {
+    if (error.status !== 404) {
+      throw error;
+    }
+    selectedBodyGoal = null;
+  }
+
+  const nutritionGoal = await getNutritionGoalFromApi();
+  nutritionGoals = nutritionGoal ? goalFromApi(nutritionGoal) : null;
+}
+
+async function initializeNutritionBackend() {
+  const saved = loadNutritionSessionState();
+  selectedBodyGoal = saved.selectedBodyGoal || null;
+  selectedNutritionDate = saved.selectedDate || getNutritionTodayKey();
+
+  await migrateLegacyNutritionData();
+  await refreshNutritionSummary();
+
+  const selectedDateRequest = loadMealsForDate(selectedNutritionDate, { notify: false });
+  const lastSevenRequests = getLastSevenNutritionDateKeys().map((dateKey) =>
+    loadMealsForDate(dateKey, { notify: false })
+  );
+  await Promise.all([selectedDateRequest, ...lastSevenRequests]);
+  persistNutritionSessionState();
+  setupBodyGoalChoices();
+  renderGoalsCard();
+  document.dispatchEvent(new CustomEvent('nutrition:mealsUpdated'));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  nutritionBackendReady = initializeNutritionBackend().catch(reportNutritionApiError);
+});
 
 function getUserStorageSlug() {
   return window.UserStorage.getCurrentUserSlug();
@@ -462,50 +729,36 @@ function loadNutritionSessionState() {
 function persistNutritionSessionState() {
   const payload = {
     selectedDate: selectedNutritionDate,
-    selectedBodyGoal,
-    goals: nutritionGoals,
-    meals: [...nutritionMealsByDate.entries()].map(([dateKey, meals]) => [dateKey, meals])
+    selectedBodyGoal
   };
 
   window.UserStorage.saveUserData('nutrition_session_data', payload);
-}
-
-function hydrateNutritionSessionState() {
-  const saved = loadNutritionSessionState();
-
-  if (saved.meals && Array.isArray(saved.meals)) {
-    nutritionMealsByDate.clear();
-    saved.meals.forEach(([dateKey, meals]) => {
-      if (dateKey && Array.isArray(meals)) {
-        nutritionMealsByDate.set(dateKey, meals);
-      }
-    });
-  }
-
-  if (saved.goals) {
-    nutritionGoals = saved.goals;
-  }
-
-  if (saved.selectedBodyGoal) {
-    selectedBodyGoal = saved.selectedBodyGoal;
-  }
-
-  if (saved.selectedDate) {
-    selectedNutritionDate = saved.selectedDate;
-  }
 }
 
 function setupBodyGoalChoices() {
   document.querySelectorAll('.goal-choice[data-goal]').forEach((button) => {
     button.classList.toggle('is-selected', button.dataset.goal === selectedBodyGoal);
 
-    button.addEventListener('click', () => {
-      selectedBodyGoal = button.dataset.goal;
-      persistNutritionSessionState();
-      document.querySelectorAll('.goal-choice[data-goal]').forEach((choice) => {
-        choice.classList.toggle('is-selected', choice === button);
-      });
-      window.location.href = '../../pages/hologram/';
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      try {
+        const response = await window.BioTraceApi.request('/profile/goal', {
+          method: 'PATCH',
+          authenticated: true,
+          body: { goalType: button.dataset.goal }
+        });
+        selectedBodyGoal = response.profile.goalType;
+        nutritionApiErrorReported = false;
+        persistNutritionSessionState();
+        document.querySelectorAll('.goal-choice[data-goal]').forEach((choice) => {
+          choice.classList.toggle('is-selected', choice === button);
+        });
+        window.location.href = '../../pages/hologram/';
+      } catch (error) {
+        reportNutritionApiError(error);
+      } finally {
+        button.disabled = false;
+      }
     });
   });
 }
@@ -526,8 +779,6 @@ function escapeNutritionHtml(value) {
     '"': '&quot;'
   }[character]));
 }
-
-let nutritionGoals = null;
 
 function renderGoalsCard() {
   const content = document.querySelector('#goalsContent');
@@ -561,11 +812,18 @@ function renderGoalsCard() {
   `;
 
   content.querySelector('#goalsEditButton').addEventListener('click', renderGoalsForm);
-  content.querySelector('#goalsDeleteButton').addEventListener('click', () => {
+  content.querySelector('#goalsDeleteButton').addEventListener('click', async () => {
     if (window.confirm('Delete your goals?')) {
-      nutritionGoals = null;
-      persistNutritionSessionState();
-      renderGoalsCard();
+      try {
+        await window.BioTraceApi.request('/nutrition-goal', {
+          method: 'DELETE',
+          authenticated: true
+        });
+        nutritionGoals = null;
+        renderGoalsCard();
+      } catch (error) {
+        reportNutritionApiError(error);
+      }
     }
   });
 }
@@ -599,7 +857,7 @@ function renderGoalsForm() {
     </form>
   `;
 
-  content.querySelector('#goalsForm').addEventListener('submit', (event) => {
+  content.querySelector('#goalsForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const fields = Array.from(content.querySelectorAll('input'));
     const valid = fields.every((field) => /^\d+(\.\d+)?$/.test(field.value.trim()));
@@ -611,23 +869,26 @@ function renderGoalsForm() {
       return;
     }
 
-    nutritionGoals = {
+    const nextGoal = {
       calories: fields[0].value,
       protein: fields[1].value,
       carbs: fields[2].value,
       fat: fields[3].value
     };
 
-    persistNutritionSessionState();
-    renderGoalsCard();
+    try {
+      const response = await window.BioTraceApi.request('/nutrition-goal', {
+        method: 'PUT',
+        authenticated: true,
+        body: goalPayload(nextGoal, selectedBodyGoal || nutritionGoals?.goalType)
+      });
+      nutritionGoals = goalFromApi(response.nutritionGoal);
+      renderGoalsCard();
+    } catch (error) {
+      reportNutritionApiError(error);
+    }
   });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  hydrateNutritionSessionState();
-  setupBodyGoalChoices();
-  renderGoalsCard();
-});
 
 function updateMealPlan() {
   const list = document.querySelector('#mealPlanList');
@@ -671,13 +932,12 @@ function updateDailyOverview() {
 
   if (!chart) return;
 
-  const meals = nutritionMealsByDate.get(getNutritionTodayKey()) || [];
-  const totals = meals.reduce((total, meal) => ({
-    calories: total.calories + Number(meal.calories || 0),
-    protein: total.protein + Number(meal.protein || 0),
-    carbs: total.carbs + Number(meal.carbs || 0),
-    fat: total.fat + Number(meal.fat || 0)
-  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  const totals = nutritionDailySummaries.get(getNutritionTodayKey()) || {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0
+  };
 
   const proteinCalories = totals.protein * 4;
   const carbsCalories = totals.carbs * 4;
@@ -706,32 +966,7 @@ function updateLastSevenDaysOverview() {
 
   if (!chart) return;
 
-  const totals = {
-    calories: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0
-  };
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  for (let offset = 0; offset < 7; offset += 1) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - offset);
-    const dateKey = [
-      date.getFullYear(),
-      String(date.getMonth() + 1).padStart(2, '0'),
-      String(date.getDate()).padStart(2, '0')
-    ].join('-');
-
-    (nutritionMealsByDate.get(dateKey) || []).forEach((meal) => {
-      totals.calories += Number(meal.calories || 0);
-      totals.protein += Number(meal.protein || 0);
-      totals.carbs += Number(meal.carbs || 0);
-      totals.fat += Number(meal.fat || 0);
-    });
-  }
+  const totals = nutritionWeeklyTotals;
 
   const proteinCalories = totals.protein * 4;
   const carbsCalories = totals.carbs * 4;
@@ -813,7 +1048,10 @@ document.addEventListener('DOMContentLoaded', () => {
       cell.classList.add('selected');
     }
 
-    if (nutritionMealsByDate.has(dateKey)) {
+    if (
+      nutritionDailySummaries.get(dateKey)?.mealCount > 0 ||
+      (nutritionMealsByDate.get(dateKey) || []).length > 0
+    ) {
       cell.classList.add('completed');
     }
   }
@@ -1743,7 +1981,7 @@ document.addEventListener('DOMContentLoaded', () => {
     mealNameInput.value = card.dataset.mealName;
     mealTypeInput.value = card.dataset.mealType || 'breakfast';
     mealTimeInput.value = card.dataset.mealTime || '';
-    mealQuantityInput.value = card.dataset.mealQuantity || '';
+    mealQuantityInput.value = card.dataset.mealQuantity ?? '';
     caloriesInput.value = card.dataset.calories || '';
     proteinInput.value = card.dataset.protein || '';
     carbsInput.value = card.dataset.carbs || '';
@@ -2148,6 +2386,29 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  function mealPayloadFromForm(mealData) {
+    const payload = {
+      date: selectedNutritionDate,
+      mealName: mealData.mealName,
+      mealType: mealData.mealType,
+      mealTime: mealData.mealTime,
+      calories: Number(mealData.calories),
+      protein: Number(mealData.protein),
+      carbs: Number(mealData.carbs),
+      fat: Number(mealData.fat),
+      fiber: Number(mealData.fiber || 0),
+      sodium: Number(mealData.sodium || 0),
+      sugar: Number(mealData.sugar || 0),
+      unit: mealData.mealUnit || 'g'
+    };
+
+    if (mealData.mealQuantity !== '') {
+      payload.quantity = Number(mealData.mealQuantity);
+    }
+
+    return payload;
+  }
+
   function renderSavedMealCard(card, mealData) {
     const mealType = mealTypeInput.querySelector(`option[value="${mealData.mealType}"]`)?.textContent || mealData.mealType;
     const details = [
@@ -2168,18 +2429,6 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
-  function renderMealCard(card) {
-    if (!card) return;
-
-    const meals = nutritionMealsByDate.get(selectedNutritionDate) || [];
-    const mealData = collectMealData();
-    meals[currentMealIndex] = mealData;
-    nutritionMealsByDate.set(selectedNutritionDate, meals);
-    persistNutritionSessionState();
-    renderSavedMealCard(card, mealData);
-    document.dispatchEvent(new CustomEvent('nutrition:mealsUpdated'));
-  }
-
   function clearMealCard(card, removeFromStore = true) {
     if (!card) return;
 
@@ -2197,15 +2446,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const meals = nutritionMealsByDate.get(selectedNutritionDate) || [];
       const cardIndex = Array.from(mealCards).indexOf(card);
       meals.splice(cardIndex, 1);
-      while (meals.length && !meals[meals.length - 1]) {
-        meals.pop();
-      }
       if (meals.length) {
         nutritionMealsByDate.set(selectedNutritionDate, meals);
       } else {
         nutritionMealsByDate.delete(selectedNutritionDate);
       }
-      persistNutritionSessionState();
+      mealsUpdated();
     }
   }
 
@@ -2246,7 +2492,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     mealFormSave.addEventListener(
       'click',
-      () => {
+      async () => {
 
         const fieldsValid = validationFields.map(({ field, type, label, optional }) => {
           if (type === 'text') {
@@ -2268,25 +2514,88 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        renderMealCard(currentMealCard);
+        if (!nutritionMealLoadedDates.has(selectedNutritionDate)) {
+          alert('Meals are still loading. Please wait a moment and try again.');
+          return;
+        }
 
-        closeForm();
+        mealFormSave.disabled = true;
+        try {
+          const formData = collectMealData();
+          const existingMealId = currentMealCard.dataset.mealId;
+          const savedMeal = await window.BioTraceApi.request(
+            existingMealId ? `/meals/${encodeURIComponent(existingMealId)}` : '/meals',
+            {
+              method: existingMealId ? 'PUT' : 'POST',
+              authenticated: true,
+              body: mealPayloadFromForm(formData)
+            }
+          );
+          nutritionApiErrorReported = false;
+          const normalizedMeal = mealFromApi(savedMeal);
+          const meals = nutritionMealsByDate.get(selectedNutritionDate) || [];
 
+          if (currentMealIndex >= 0 && currentMealIndex < meals.length) {
+            meals[currentMealIndex] = normalizedMeal;
+          } else {
+            meals.push(normalizedMeal);
+          }
+
+          nutritionMealsByDate.set(selectedNutritionDate, meals);
+          renderSavedMealCard(currentMealCard, normalizedMeal);
+          mealsUpdated();
+          closeForm();
+
+          try {
+            await refreshNutritionSummary();
+            mealsUpdated();
+          } catch (summaryError) {
+            reportNutritionApiError(summaryError);
+          }
+        } catch (error) {
+          reportNutritionApiError(error);
+        } finally {
+          mealFormSave.disabled = false;
+        }
       }
     );
 
   }
 
   if (mealFormDelete) {
-    mealFormDelete.addEventListener('click', () => {
+    mealFormDelete.addEventListener('click', async () => {
       if (!currentMealCard || !currentMealCard.dataset.mealName) return;
 
       const shouldDelete = window.confirm('Delete this meal?');
       if (!shouldDelete) return;
 
-      clearMealCard(currentMealCard);
-      document.dispatchEvent(new CustomEvent('nutrition:mealsUpdated'));
-      closeForm();
+      const mealId = currentMealCard.dataset.mealId;
+      if (!mealId) {
+        alert('This meal is not linked to a server record. Reload the page and try again.');
+        return;
+      }
+
+      mealFormDelete.disabled = true;
+      try {
+        await window.BioTraceApi.request(`/meals/${encodeURIComponent(mealId)}`, {
+          method: 'DELETE',
+          authenticated: true
+        });
+        nutritionApiErrorReported = false;
+        clearMealCard(currentMealCard);
+        closeForm();
+
+        try {
+          await refreshNutritionSummary();
+          mealsUpdated();
+        } catch (summaryError) {
+          reportNutritionApiError(summaryError);
+        }
+      } catch (error) {
+        reportNutritionApiError(error);
+      } finally {
+        mealFormDelete.disabled = false;
+      }
     });
   }
 

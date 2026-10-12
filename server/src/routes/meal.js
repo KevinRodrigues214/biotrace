@@ -1,34 +1,9 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
 const Meal = require('../models/Meal');
+const requireAuth = require('../middleware/requireAuth');
 const router = express.Router();
-
-function requireAuth(req, res, next) {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Token missing.' });
-    }
-
-    try {
-        const token = authHeader.split(' ')[1];
-        req.user = jwt.verify(token, process.env.JWT_SECRET);
-        return next();
-    } catch (error) {
-        if (
-            error instanceof jwt.JsonWebTokenError ||
-            error instanceof jwt.TokenExpiredError ||
-            error instanceof jwt.NotBeforeError
-        ) {
-            return res.status(401).json({ message: 'Invalid token.' });
-        }
-
-        console.error('Meal authentication error:', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-    }
-}
 
 function isValidDate(date) {
     if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -81,8 +56,8 @@ function buildMealPayload(body, partial = false) {
             }
 
             const number = typeof value === 'number' ? value : Number(value);
-            if (!Number.isFinite(number)) {
-                return { error: `${field} must be a valid number.` };
+            if (!Number.isFinite(number) || number < 0) {
+                return { error: `${field} must be a non-negative number.` };
             }
             payload[field] = number;
         }
@@ -133,6 +108,51 @@ router.get('/meals', requireAuth, async (req, res) => {
         return res.status(200).json(meals);
     } catch (error) {
         return handleDatabaseError(res, error, 'fetching');
+    }
+});
+
+router.post('/meals/import-legacy', requireAuth, async (req, res) => {
+    const legacyMeals = req.body && req.body.meals;
+    if (!Array.isArray(legacyMeals) || legacyMeals.length > 1000) {
+        return res.status(400).json({ message: 'meals must be an array with at most 1000 entries.' });
+    }
+
+    const operationsByKey = new Map();
+    for (const [index, legacyMeal] of legacyMeals.entries()) {
+        if (!legacyMeal || typeof legacyMeal.legacyKey !== 'string' ||
+            !legacyMeal.legacyKey.trim()) {
+            return res.status(400).json({ message: `meals[${index}].legacyKey is required.` });
+        }
+
+        const { payload, error } = buildMealPayload(legacyMeal);
+        if (error) {
+            return res.status(400).json({ message: `meals[${index}]: ${error}` });
+        }
+
+        operationsByKey.set(legacyMeal.legacyKey, {
+            updateOne: {
+                filter: { userId: req.user.userId, legacyKey: legacyMeal.legacyKey },
+                update: {
+                    $setOnInsert: {
+                        ...payload,
+                        userId: req.user.userId,
+                        legacyKey: legacyMeal.legacyKey
+                    }
+                },
+                upsert: true
+            }
+        });
+    }
+
+    try {
+        if (operationsByKey.size === 0) {
+            return res.status(200).json({ imported: 0 });
+        }
+
+        const result = await Meal.bulkWrite([...operationsByKey.values()], { ordered: true });
+        return res.status(200).json({ imported: result.upsertedCount });
+    } catch (error) {
+        return handleDatabaseError(res, error, 'importing legacy');
     }
 });
 

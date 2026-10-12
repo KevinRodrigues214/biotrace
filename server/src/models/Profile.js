@@ -7,11 +7,6 @@ const profileSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    name: {
-        type: String,
-        required: true,
-        trim: true
-    },
     age: {
         type: Number,
         required: true,
@@ -21,6 +16,11 @@ const profileSchema = new mongoose.Schema({
         type: String,
         enum: ['male', 'female', 'other', 'prefer-not-to-say'],
         required: true
+    },
+    goalType: {
+        type: String,
+        enum: ['loss', 'gain', 'maintenance'],
+        default: null
     },
     height: {
         type: Number,
@@ -35,4 +35,3 @@ const profileSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 module.exports = mongoose.model('Profile', profileSchema);
-

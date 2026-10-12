@@ -34,6 +34,8 @@
 
   function removeCurrentUserSession() {
     sessionStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_user_id');
   }
 
   window.UserStorage = {

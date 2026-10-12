@@ -22,6 +22,8 @@ let hologramEntryStarted = false;
 let hologramEntryTime = 0;
 
 const muscleMaterials = {};
+let hologramProfile = null;
+let hologramNutritionDays = new Map();
 
 // =====================================================
 // INTERAÇÃO COM OS MÚSCULOS
@@ -179,18 +181,17 @@ function updateMuscleMetrics(muscleName = selectedMuscle?.name || null) {
 }
 
 function calculateDailyTargets() {
-  const profile = window.UserStorage?.readUserData('profile_data', {});
-  const nutrition = window.UserStorage?.readUserData('nutrition_session_data', {});
-  const age = Number(profile?.profileAge);
-  const height = Number(profile?.profileHeight);
-  const weight = Number(profile?.profileWeight);
-  const goal = nutrition?.selectedBodyGoal;
+  const profile = hologramProfile;
+  const age = Number(profile?.age);
+  const height = Number(profile?.height);
+  const weight = Number(profile?.weight);
+  const goal = profile?.goalType;
 
   if (!age || !height || !weight || !goal) {
     return null;
   }
 
-  const gender = profile?.profileGender;
+  const gender = profile?.gender;
   const genderConstant = gender === 'male'
     ? 5
     : gender === 'female'
@@ -255,8 +256,6 @@ function getLocalDateKey(date) {
 }
 
 function getGoalChartData() {
-  const nutrition = window.UserStorage?.readUserData('nutrition_session_data', {});
-  const mealsByDate = new Map(nutrition?.meals || []);
   const days = [];
 
   for (let offset = 6; offset >= 0; offset -= 1) {
@@ -264,10 +263,7 @@ function getGoalChartData() {
     date.setHours(0, 0, 0, 0);
     date.setDate(date.getDate() - offset);
     const dateKey = getLocalDateKey(date);
-    const meals = Array.isArray(mealsByDate.get(dateKey))
-      ? mealsByDate.get(dateKey)
-      : [];
-    const consumed = meals.reduce((total, meal) => total + Number(meal?.calories || 0), 0);
+    const consumed = Number(hologramNutritionDays.get(dateKey)?.calories || 0);
 
     days.push({
       label: date.toLocaleDateString('en-US', { weekday: 'short' }),
@@ -356,9 +352,40 @@ function setupGoalChart() {
   });
 }
 
-setupGoalChart();
+async function loadHologramNutritionData() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const from = new Date(today);
+  from.setDate(today.getDate() - 6);
 
+  try {
+    const [profileResponse, summaryResponse] = await Promise.all([
+      window.BioTraceApi.request('/profile', { authenticated: true }),
+      window.BioTraceApi.request(
+        `/nutrition/summary?from=${getLocalDateKey(from)}&to=${getLocalDateKey(today)}`,
+        { authenticated: true }
+      )
+    ]);
+
+    hologramProfile = profileResponse.profile;
+    hologramNutritionDays = new Map(
+      summaryResponse.days.map((day) => [day.date, day])
+    );
+    updateGoalMetrics();
+  } catch (error) {
+    console.error('Hologram nutrition data error:', error);
+    const message = document.getElementById('goalMetricMessage');
+    if (message) {
+      message.textContent = error.status === 404
+        ? 'Complete your Profile and choose a goal in Nutrition.'
+        : error.message || 'Unable to load nutrition data.';
+    }
+  }
+}
+
+setupGoalChart();
 updateGoalMetrics();
+loadHologramNutritionData();
 setInterval(() => {
   updateMuscleMetrics();
   updateGoalMetrics();
@@ -1825,5 +1852,4 @@ window.addEventListener(
   }
 
 );
-
 

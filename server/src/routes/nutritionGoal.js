@@ -1,105 +1,103 @@
-
 const express = require('express');
-
-const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 
 const NutritionGoal = require('../models/NutritionGoal');
+const requireAuth = require('../middleware/requireAuth');
 const router = express.Router();
-router.get('/nutrition-goal', async (req, res) => {
-    try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ message: 'Token missing.' });
-        }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const userId = decoded.userId;
-        const nutritionGoal = await NutritionGoal.findOne({ userId });
 
-       
+const validGoalTypes = ['loss', 'gain', 'maintenance'];
+
+function parseGoal(body) {
+    const { goalType, calories, protein, carbohydrates, fats } = body || {};
+    if (!validGoalTypes.includes(goalType)) {
+        return { error: 'Invalid goal type.' };
+    }
+
+    const values = { calories, protein, carbohydrates, fats };
+    for (const [field, value] of Object.entries(values)) {
+        const number = typeof value === 'number' ? value : Number(value);
+        if (value === '' || value === null || value === undefined ||
+            !Number.isFinite(number) || number < 0) {
+            return { error: `${field} must be a non-negative number.` };
+        }
+        values[field] = number;
+    }
+
+    return { goal: { goalType, ...values } };
+}
+
+function handleGoalError(res, error, action) {
+    if (error instanceof mongoose.Error.ValidationError ||
+        error instanceof mongoose.Error.CastError) {
+        return res.status(400).json({ message: error.message });
+    }
+
+    console.error(`Nutrition goal ${action} error:`, error);
+    return res.status(500).json({ message: `Failed to ${action} nutrition goal.` });
+}
+
+router.get('/nutrition-goal', requireAuth, async (req, res) => {
+    try {
+        const nutritionGoal = await NutritionGoal.findOne({ userId: req.user.userId });
         if (!nutritionGoal) {
             return res.status(404).json({ message: 'Nutrition goal not found.' });
         }
 
-        return res.status(200).json({
-            message: 'Nutrition goal retrieved successfully.',
-            nutritionGoal
-        });
+        return res.status(200).json({ nutritionGoal });
     } catch (error) {
-        console.error('Nutrition goal retrieval error:', error);
-        return res.status(500).json({ message: 'Failed to retrieve nutrition goal.' });
+        return handleGoalError(res, error, 'retrieve');
     }
 });
-router.post('/nutrition-goal', async (req, res) => {
+
+router.post('/nutrition-goal', requireAuth, async (req, res) => {
+    const { goal, error } = parseGoal(req.body);
+    if (error) {
+        return res.status(400).json({ message: error });
+    }
+
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ message: 'Token missing.' });
+        const existingGoal = await NutritionGoal.findOne({ userId: req.user.userId });
+        if (existingGoal) {
+            return res.status(409).json({ message: 'Nutrition goal already exists.' });
         }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const userId = decoded.userId;
-        const { goalType, calories, protein, carbohydrates, fats } = req.body;
-        if (!goalType || !calories || !protein || !carbohydrates || !fats) {
-            return res.status(400).json({ message: 'All fields are required.' });
-        }
-        if (!['loss', 'gain', 'maintenance'].includes(goalType)) {
-            return res.status(400).json({ message: 'Invalid goal type.' });
-        }
+
         const nutritionGoal = await NutritionGoal.create({
-            userId,
-            goalType,
-            calories,
-            protein,
-            carbohydrates,
-            fats
+            ...goal,
+            userId: req.user.userId
         });
-        
-        return res.status(201).json({
-            message: 'Nutrition goal created successfully.',
-            nutritionGoal
-        });
-    } catch (error) {
-        console.error('Nutrition goal creation error:', error);
-        return res.status(500).json({ message: 'Failed to create nutrition goal.' });
+        return res.status(201).json({ nutritionGoal });
+    } catch (databaseError) {
+        return handleGoalError(res, databaseError, 'create');
     }
 });
 
-router.put('/nutrition-goal', async (req, res) => {
-    try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ message: 'Token missing.' });
-        }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const userId = decoded.userId;
-        const { goalType, calories, protein, carbohydrates, fats } = req.body;
-        const nutritionGoal = await NutritionGoal.findOne({ userId });
+router.put('/nutrition-goal', requireAuth, async (req, res) => {
+    const { goal, error } = parseGoal(req.body);
+    if (error) {
+        return res.status(400).json({ message: error });
+    }
 
-        if (!goalType || !calories || !protein || !carbohydrates || !fats) {
-            return res.status(400).json({ message: 'All fields are required.' });
-        }
-        if (!['loss', 'gain', 'maintenance'].includes(goalType)) {
-            return res.status(400).json({ message: 'Invalid goal type.' });
-        }
+    try {
+        const nutritionGoal = await NutritionGoal.findOneAndUpdate(
+            { userId: req.user.userId },
+            { $set: goal, $setOnInsert: { userId: req.user.userId } },
+            { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+        );
+        return res.status(200).json({ nutritionGoal });
+    } catch (databaseError) {
+        return handleGoalError(res, databaseError, 'save');
+    }
+});
+
+router.delete('/nutrition-goal', requireAuth, async (req, res) => {
+    try {
+        const nutritionGoal = await NutritionGoal.findOneAndDelete({ userId: req.user.userId });
         if (!nutritionGoal) {
             return res.status(404).json({ message: 'Nutrition goal not found.' });
         }
-
-        const updatedNutritionGoal = await NutritionGoal.findByIdAndUpdate(
-            nutritionGoal._id,
-            { goalType, calories, protein, carbohydrates, fats },
-            { new: true }
-        );
-
-        return res.status(200).json({
-            message: 'Nutrition goal updated successfully.',
-            nutritionGoal: updatedNutritionGoal
-        });
+        return res.status(200).json({ message: 'Nutrition goal deleted successfully.' });
     } catch (error) {
-        console.error('Nutrition goal update error:', error);
-        return res.status(500).json({ message: 'Failed to update nutrition goal.' });
+        return handleGoalError(res, error, 'delete');
     }
 });
 

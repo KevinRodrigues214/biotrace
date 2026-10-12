@@ -37,7 +37,7 @@ function validateEmailFormat(email) {
 }
 
 // ===== 4. LÓGICA DE REGISTRO (CADASTRO) =====
-registrationForm.addEventListener('submit', function(event) {
+registrationForm.addEventListener('submit', async function(event) {
     event.preventDefault(); // Impede a página de recarregar
     clearErrors();
 
@@ -53,9 +53,8 @@ registrationForm.addEventListener('submit', function(event) {
         return;
     }
 
-    // --- VALIDATION B: Password length (minimum 6 characters) ---
-    if (password.length < 6) {
-        showError('registrationForm', 'Password must contain at least 6 characters.');
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) {
+        showError('registrationForm', 'Password must be at least 8 characters and contain a letter and a number.');
         return;
     }
 
@@ -65,70 +64,41 @@ registrationForm.addEventListener('submit', function(event) {
         return;
     }
 
-    // Busca a lista de usuários já cadastrados no localStorage (ou cria uma vazia)
-    let users = JSON.parse(localStorage.getItem('temp_users')) || [];
+    try {
+        await window.BioTraceApi.request('/auth/register', {
+            method: 'POST',
+            body: { name, username, email, password }
+        });
 
-    // Verifica se o usuário já existe
-    const userExists = users.some(user => user.username.toLowerCase() === username.toLowerCase());
-    const emailExists = users.some(user => user.email && user.email.toLowerCase() === email.toLowerCase());
-
-    if (userExists) {
-        showError('registrationForm', 'This username is already registered!');
-        return;
+        alert('Registration successful! Please log in with your new account.');
+        registrationForm.reset();
+        registrationForm.classList.remove('context-active');
+        loginForm.classList.add('context-active');
+    } catch (error) {
+        showError('registrationForm', error.message);
     }
-
-    if (emailExists) {
-        showError('registrationForm', 'This email is already registered!');
-        return;
-    }
-
-    // Save the user with all provided data (including the name for the header initials)
-    users.push({ 
-        name: name,
-        username: username, 
-        email: email,
-        password: password 
-    });
-    localStorage.setItem('temp_users', JSON.stringify(users));
-
-    alert('Registration successful! Redirecting to login...');
-    
-    // Limpa o formulário de registro e volta para a tela de login
-    registrationForm.reset();
-    registrationForm.classList.remove('context-active');
-    loginForm.classList.add('context-active');
 });
 
 // ===== 5. LÓGICA DE LOGIN =====
-loginForm.addEventListener('submit', function(event) {
+loginForm.addEventListener('submit', async function(event) {
     event.preventDefault(); // Impede a página de recarregar
     clearErrors();
 
-    const usernameOrEmail = loginInput.value.trim();
+    const email = loginInput.value.trim();
     const password = passwordInput.value;
 
-    // Busca a lista de usuários salvos no localStorage
-    const users = JSON.parse(localStorage.getItem('temp_users')) || [];
+    try {
+        const result = await window.BioTraceApi.request('/auth/login', {
+            method: 'POST',
+            body: { email, password }
+        });
 
-    // Permite fazer login digitando tanto o Username quanto o E-mail
-    const validUser = users.find(user => 
-        (user.username.toLowerCase() === usernameOrEmail.toLowerCase() || 
-         (user.email && user.email.toLowerCase() === usernameOrEmail.toLowerCase())) && 
-        user.password === password
-    );
-
-    if (validUser) {
-        // Save the full user name in session so the header can generate initials properly
-        sessionStorage.setItem('logged_user', validUser.name || validUser.username);
-
-        alert(`Welcome back, ${validUser.name || validUser.username}! You have successfully logged in.`);
-        window.location.href = '../homepage/'; 
-
-
-        
-
-    } else {
-        showError('loginForm', 'Invalid username/email or password.');
+        sessionStorage.setItem('auth_token', result.token);
+        sessionStorage.setItem('auth_user_id', result.user.id);
+        sessionStorage.setItem('logged_user', result.user.name || result.user.username);
+        window.location.href = '../homepage/';
+    } catch (error) {
+        showError('loginForm', error.message);
     }
 });
 

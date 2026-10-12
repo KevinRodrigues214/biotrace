@@ -7,6 +7,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profile');
 const nutritionGoalRoutes = require('./routes/nutritionGoal');
+const nutritionSummaryRoutes = require('./routes/nutritionSummary');
 const mealRoutes = require('./routes/meal');
 
 
@@ -26,6 +27,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api', profileRoutes);
 app.use('/api', nutritionGoalRoutes);
+app.use('/api', nutritionSummaryRoutes);
 app.use('/api', mealRoutes);
 
 async function startServer() {
