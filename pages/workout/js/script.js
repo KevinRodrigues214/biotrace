@@ -2,7 +2,37 @@ const temporaryWorkoutStore = new Map();
 const dayCompletionStore = new Map();
 const confirmedWorkoutStore = new Map();
 const clearedWorkoutDates = new Set();
+const workoutLoadedDates = new Set();
+const workoutSaveQueues = new Map();
 let selectedDate = null;
+let workoutBackendReady = Promise.resolve();
+let workoutTemplatesSaveQueue = Promise.resolve();
+
+function renderEmptyCard(card) {
+    card.classList.remove('filled');
+    delete card.dataset.exerciseData;
+    card.innerHTML = `
+        <div class="exercise-card-icon">+</div>
+        <span class="exercise-card-title">Add Exercise</span>
+    `;
+}
+
+function renderFilledCard(card, data) {
+    card.classList.add('filled');
+    card.dataset.exerciseData = JSON.stringify(data);
+
+    const weightLine = data.weight ? ` · ${data.weight}kg` : '';
+    card.innerHTML = `
+        <span class="exercise-card-name">${data.name}</span>
+        <span class="exercise-card-target">${data.targetSets || 0} × ${data.targetReps || 0}</span>
+        <span class="exercise-card-time">${data.workoutTime || '--:--'}</span>
+        <span class="exercise-card-stats">${data.sets || 0} Sets · ${data.reps || 0} Reps${weightLine}</span>
+        <div class="exercise-card-actions">
+            <button type="button" class="exercise-card-save">Save to Today</button>
+            <button type="button" class="exercise-card-save-past">Save to Previous Day</button>
+        </div>
+    `;
+}
 
 function getWorkoutExitState() {
     const dateKey = getSelectedDateKey();
@@ -114,16 +144,7 @@ function getSelectorCardSnapshot() {
 }
 
 function persistWorkoutSessionState() {
-    const payload = {
-        selectedDate,
-        temporaryWorkoutStore: [...temporaryWorkoutStore.entries()],
-        dayCompletionStore: [...dayCompletionStore.entries()],
-        confirmedWorkoutStore: [...confirmedWorkoutStore.entries()],
-        clearedWorkoutDates: [...clearedWorkoutDates],
-        selectorCards: getSelectorCardSnapshot()
-    };
-
-    window.UserStorage.saveUserData('workout_session_data', payload);
+    window.UserStorage.saveUserData('workout_session_data', { selectedDate });
 }
 
 function hydrateWorkoutSessionState() {
@@ -295,6 +316,176 @@ function saveWorkoutForDate(dateKey, entries) {
     temporaryWorkoutStore.set(dateKey, normalized);
     confirmedWorkoutStore.set(dateKey, normalized);
     persistWorkoutSessionState();
+    return persistWorkoutDate(dateKey, normalized);
+}
+
+function reportWorkoutApiError(error) {
+    console.error('Workout API error:', error);
+    showSaveConfirmation(error.message || 'Unable to save workout to the server.');
+}
+
+function persistWorkoutDate(dateKey, entries = getSavedWorkoutForDate(dateKey)) {
+    const snapshot = copyEntries(entries);
+    const previousSave = workoutSaveQueues.get(dateKey) || Promise.resolve();
+    const save = previousSave.catch(() => {}).then(async () => {
+        await window.BioTraceApi.request(`/workouts/${encodeURIComponent(dateKey)}`, {
+            method: 'PUT',
+            authenticated: true,
+            keepalive: true,
+            body: { exercises: snapshot }
+        });
+        workoutLoadedDates.add(dateKey);
+    });
+
+    workoutSaveQueues.set(dateKey, save);
+    save.catch(reportWorkoutApiError).finally(() => {
+        if (workoutSaveQueues.get(dateKey) === save) {
+            workoutSaveQueues.delete(dateKey);
+        }
+    });
+    return save;
+}
+
+function workoutDateKey(date) {
+    return [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0')
+    ].join('-');
+}
+
+function normalizeWorkoutExercise(exercise) {
+    return {
+        ...exercise,
+        targetSets: exercise.targetSets ?? '',
+        targetReps: exercise.targetReps ?? '',
+        sets: exercise.sets ?? '',
+        reps: exercise.reps ?? '',
+        weight: exercise.weight ?? ''
+    };
+}
+
+async function migrateLegacyWorkouts() {
+    const saved = loadWorkoutSessionState();
+    const migrationUser = sessionStorage.getItem('auth_user_id') || getWorkoutUserStorageSlug();
+    const migrationKey = `workout_legacy_migrated_v2_${migrationUser}`;
+    if (sessionStorage.getItem(migrationKey) === 'true') {
+        return;
+    }
+
+    const legacyByDate = new Map();
+    (saved.confirmedWorkoutStore || []).forEach(([date, exercises]) => {
+        if (date && Array.isArray(exercises) && exercises.length) {
+            legacyByDate.set(date, exercises);
+        }
+    });
+    (saved.temporaryWorkoutStore || []).forEach(([date, exercises]) => {
+        if (date && Array.isArray(exercises) && exercises.length) {
+            legacyByDate.set(date, exercises);
+        }
+    });
+
+    const workouts = [...legacyByDate.entries()].map(([date, exercises]) => ({
+        date,
+        exercises: exercises.map((exercise, index) => ({
+            ...exercise,
+            sourceCard: exercise.sourceCard || `legacy-${index}`
+        }))
+    }));
+    const templates = Array.isArray(saved.selectorCards)
+        ? saved.selectorCards
+        : getSelectorCardSnapshot();
+
+    if (workouts.length || templates.length) {
+        await window.BioTraceApi.request('/workouts/import-legacy', {
+            method: 'POST',
+            authenticated: true,
+            body: { workouts, templates }
+        });
+    }
+
+    sessionStorage.setItem(migrationKey, 'true');
+}
+
+async function loadWorkoutTemplatesFromApi() {
+    const response = await window.BioTraceApi.request('/workout-templates', {
+        authenticated: true
+    });
+    if (!response || !Array.isArray(response.templates)) {
+        throw new Error('The workout templates API returned an invalid response.');
+    }
+
+    document.querySelectorAll('.exercise-card').forEach(renderEmptyCard);
+    response.templates.forEach(({ cardId, data }) => {
+        if (typeof cardId !== 'string' || !data) {
+            return;
+        }
+
+        const card = Array.from(document.querySelectorAll('.exercise-card'))
+            .find((exerciseCard) => exerciseCard.dataset.cardId === cardId);
+        if (card) {
+            renderFilledCard(card, data);
+        }
+    });
+}
+
+function persistWorkoutTemplates() {
+    const templates = getSelectorCardSnapshot();
+    const previousSave = workoutTemplatesSaveQueue;
+    const save = previousSave.catch(() => {}).then(() =>
+        window.BioTraceApi.request('/workout-templates', {
+            method: 'PUT',
+            authenticated: true,
+            body: { templates }
+        })
+    );
+    workoutTemplatesSaveQueue = save;
+    return save;
+}
+
+async function loadWorkoutsFromApi(from, to) {
+    const workouts = await window.BioTraceApi.request(
+        `/workouts?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+        { authenticated: true }
+    );
+    if (!Array.isArray(workouts)) {
+        throw new Error('The workouts API returned an invalid response.');
+    }
+
+    temporaryWorkoutStore.clear();
+    confirmedWorkoutStore.clear();
+    dayCompletionStore.clear();
+    clearedWorkoutDates.clear();
+
+    workouts.forEach((workout) => {
+        const exercises = workout.exercises.map(normalizeWorkoutExercise);
+        temporaryWorkoutStore.set(workout.date, exercises);
+        confirmedWorkoutStore.set(workout.date, copyEntries(exercises));
+        if (workout.completionState) {
+            dayCompletionStore.set(workout.date, workout.completionState);
+        }
+    });
+
+    workoutLoadedDates.clear();
+    const start = new Date(`${from}T00:00:00`);
+    const end = new Date(`${to}T00:00:00`);
+    for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        workoutLoadedDates.add(workoutDateKey(date));
+    }
+}
+
+async function initializeWorkoutBackend() {
+    await migrateLegacyWorkouts();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const firstDate = new Date(today);
+    firstDate.setDate(today.getDate() - 34);
+    await Promise.all([
+        loadWorkoutsFromApi(workoutDateKey(firstDate), workoutDateKey(today)),
+        loadWorkoutTemplatesFromApi()
+    ]);
+    persistWorkoutSessionState();
 }
 
 function showSaveConfirmation(message) {
@@ -345,6 +536,7 @@ function syncWorkoutCompletionState(dateKey) {
         confirmedWorkoutStore.set(dateKey, []);
         temporaryWorkoutStore.set(dateKey, []);
         persistWorkoutSessionState();
+        persistWorkoutDate(dateKey, []);
         syncCalendarDayState(dateKey);
         return;
     }
@@ -357,6 +549,7 @@ function syncWorkoutCompletionState(dateKey) {
         confirmedWorkoutStore.set(dateKey, copyEntries(items));
         temporaryWorkoutStore.set(dateKey, copyEntries(items));
         persistWorkoutSessionState();
+        persistWorkoutDate(dateKey, items);
         syncCalendarDayState(dateKey);
         return;
     }
@@ -370,6 +563,7 @@ function syncWorkoutCompletionState(dateKey) {
     confirmedWorkoutStore.set(dateKey, copyEntries(items));
     temporaryWorkoutStore.set(dateKey, copyEntries(items));
     persistWorkoutSessionState();
+    persistWorkoutDate(dateKey, items);
     syncCalendarDayState(dateKey);
 }
 
@@ -405,6 +599,7 @@ function applyCompletedWorkoutState(dateKey) {
         dayCompletionStore.delete(dateKey);
         confirmedWorkoutStore.delete(dateKey);
         temporaryWorkoutStore.delete(dateKey);
+        persistWorkoutDate(dateKey, []);
         syncCalendarDayState(dateKey);
         return;
     }
@@ -414,6 +609,7 @@ function applyCompletedWorkoutState(dateKey) {
 
     if (checked === 0) {
         dayCompletionStore.set(dateKey, 'day-partial');
+        persistWorkoutDate(dateKey, items);
         syncCalendarDayState(dateKey);
         return;
     }
@@ -427,6 +623,7 @@ function applyCompletedWorkoutState(dateKey) {
     confirmedWorkoutStore.set(dateKey, copyEntries(items));
     temporaryWorkoutStore.set(dateKey, copyEntries(items));
     persistWorkoutSessionState();
+    persistWorkoutDate(dateKey, items);
     syncCalendarDayState(dateKey);
 }
 
@@ -437,6 +634,7 @@ function completeWorkoutForSelectedDate(dateKey) {
         clearedWorkoutDates.delete(dateKey);
         dayCompletionStore.delete(dateKey);
         persistWorkoutSessionState();
+        persistWorkoutDate(dateKey, []);
         syncCalendarDayState(dateKey);
         return;
     }
@@ -446,6 +644,7 @@ function completeWorkoutForSelectedDate(dateKey) {
 
     if (checked === 0) {
         dayCompletionStore.set(dateKey, 'day-partial');
+        persistWorkoutDate(dateKey, items);
         syncCalendarDayState(dateKey);
         return;
     }
@@ -457,6 +656,7 @@ function completeWorkoutForSelectedDate(dateKey) {
     }
 
     persistWorkoutSessionState();
+    persistWorkoutDate(dateKey, items);
     syncCalendarDayState(dateKey);
 }
 
@@ -547,7 +747,7 @@ function renderWorkoutListForDate(dateKey) {
     syncCalendarDayState(dateKey);
 }
 
-function saveCardToDate(card, dateKey) {
+async function saveCardToDate(card, dateKey) {
     const todayList = document.querySelector('#todayExerciseList');
 
     if (!todayList || !dateKey) {
@@ -585,7 +785,7 @@ function saveCardToDate(card, dateKey) {
 
     clearedWorkoutDates.delete(dateKey);
 
-    saveWorkoutForDate(dateKey, items);
+    await saveWorkoutForDate(dateKey, items);
 
     if (dateKey === getSelectedDateKey()) {
         renderWorkoutListForDate(dateKey);
@@ -594,7 +794,7 @@ function saveCardToDate(card, dateKey) {
     return true;
 }
 
-function saveCardToToday(card) {
+async function saveCardToToday(card) {
     const today = new Date();
     const dateKey = [
         today.getFullYear(),
@@ -602,8 +802,12 @@ function saveCardToToday(card) {
         String(today.getDate()).padStart(2, '0')
     ].join('-');
 
-    if (saveCardToDate(card, dateKey)) {
-        showSaveConfirmation('Workout saved for today.');
+    try {
+        if (await saveCardToDate(card, dateKey)) {
+            showSaveConfirmation('Workout saved for today.');
+        }
+    } catch {
+        return;
     }
 }
 
@@ -679,7 +883,7 @@ function openDatePickerModal(card) {
         activeModal.setAttribute('aria-hidden', 'true');
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         const chosenDate = dateInput.value;
 
         if (!chosenDate) {
@@ -700,11 +904,14 @@ function openDatePickerModal(card) {
         }
 
         closeModal();
-        saveCardToDate(card, chosenDate);
-        showSaveConfirmation(`Workout saved for ${chosenDate}.`);
-
-        selectedDate = chosenDate;
-        window.markSelectedWorkoutDate(chosenDate);
+        try {
+            await saveCardToDate(card, chosenDate);
+            showSaveConfirmation(`Workout saved for ${chosenDate}.`);
+            selectedDate = chosenDate;
+            window.markSelectedWorkoutDate(chosenDate);
+        } catch (error) {
+            reportWorkoutApiError(error);
+        }
     };
 
     cancelButton.onclick = () => closeModal();
@@ -726,8 +933,14 @@ function saveCardToPreviousDay(card) {
 // CALENDÁRIO — CARROSSEL DE DATAS REAIS (semana a semana)
 // =========================================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     hydrateWorkoutSessionState();
+    workoutBackendReady = initializeWorkoutBackend();
+    try {
+        await workoutBackendReady;
+    } catch (error) {
+        reportWorkoutApiError(error);
+    }
 
     const calendar = document.querySelector('#workoutCalendar');
     const monthTitle = document.querySelector('#calendarMonthTitle');
@@ -1031,51 +1244,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // =========================================
-    // RENDERIZAR CARD VAZIO
-    // =========================================
-
-    function renderEmptyCard(card) {
-
-        card.classList.remove('filled');
-
-        delete card.dataset.exerciseData;
-
-        card.innerHTML = `
-            <div class="exercise-card-icon">+</div>
-            <span class="exercise-card-title">Add Exercise</span>
-        `;
-    }
-
-
-    // =========================================
-    // RENDERIZAR CARD PREENCHIDO (carrossel)
-    // =========================================
-
-    function renderFilledCard(card, data) {
-
-        card.classList.add('filled');
-
-        card.dataset.exerciseData = JSON.stringify(data);
-
-        const weightLine =
-            data.weight
-                ? ` · ${data.weight}kg`
-                : '';
-
-        card.innerHTML = `
-            <span class="exercise-card-name">${data.name}</span>
-            <span class="exercise-card-target">${data.targetSets || 0} × ${data.targetReps || 0}</span>
-            <span class="exercise-card-time">${data.workoutTime || '--:--'}</span>
-            <span class="exercise-card-stats">${data.sets || 0} Sets · ${data.reps || 0} Reps${weightLine}</span>
-            <div class="exercise-card-actions">
-                <button type="button" class="exercise-card-save">Save to Today</button>
-                <button type="button" class="exercise-card-save-past">Save to Previous Day</button>
-            </div>
-        `;
-    }
-
-
-    // =========================================
     // LIMPAR FORMULÁRIO
     // =========================================
 
@@ -1289,13 +1457,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         confirmation
             .querySelector('.exercise-leave-button')
-            .addEventListener('click', () => {
+            .addEventListener('click', async () => {
                 const dateKey = item.dataset.date || getSelectedDateKey();
                 const sourceCard = item.dataset.sourceCard;
                 const items = getSavedWorkoutForDate(dateKey)
                     .filter((entry) => entry.sourceCard !== sourceCard);
 
-                saveWorkoutForDate(dateKey, items);
+                try {
+                    await saveWorkoutForDate(dateKey, items);
+                } catch {
+                    return;
+                }
 
                 if (!items.length) {
                     clearedWorkoutDates.delete(dateKey);
@@ -1556,7 +1728,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (exerciseFormDelete) {
-        exerciseFormDelete.addEventListener('click', () => {
+        exerciseFormDelete.addEventListener('click', async () => {
             if (!currentCard) {
                 return;
             }
@@ -1575,7 +1747,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             renderEmptyCard(currentCard);
             clearForm();
-            persistWorkoutSessionState();
+            try {
+                await persistWorkoutTemplates();
+            } catch (error) {
+                reportWorkoutApiError(error);
+                return;
+            }
             closeForm();
         });
     }
@@ -1679,7 +1856,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (exerciseFormSave) {
 
-        exerciseFormSave.addEventListener('click', () => {
+        exerciseFormSave.addEventListener('click', async () => {
 
             if (!currentCard) {
                 closeForm();
@@ -1719,9 +1896,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
             renderFilledCard(currentCard, data);
-            persistWorkoutSessionState();
+            try {
+                await persistWorkoutTemplates();
+            } catch (error) {
+                reportWorkoutApiError(error);
+                return;
+            }
 
             if (currentTodayItem) {
+                const dateKey = currentTodayItem.dataset.date || getSelectedDateKey();
+                const sourceCard = currentTodayItem.dataset.sourceCard;
+                const items = getSavedWorkoutForDate(dateKey);
+                const itemIndex = items.findIndex((item) => item.sourceCard === sourceCard);
+                if (itemIndex >= 0) {
+                    items[itemIndex] = {
+                        ...items[itemIndex],
+                        ...data,
+                        date: dateKey,
+                        sourceCard,
+                        checked: Boolean(items[itemIndex].checked)
+                    };
+                    try {
+                        await saveWorkoutForDate(dateKey, items);
+                    } catch {
+                        return;
+                    }
+                }
                 currentTodayItem.innerHTML = buildTodayItemMarkup(data);
             }
 

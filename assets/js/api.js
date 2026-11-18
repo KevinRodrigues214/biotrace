@@ -1,5 +1,5 @@
 (function () {
-  const API_BASE_URL = window.BIOTRACE_API_URL || 'http://localhost:3000/api';
+  const API_BASE_URL = window.BIOTRACE_API_URL || 'http://localhost:3001/api';
 
   async function request(path, { authenticated = false, ...options } = {}) {
     const headers = new Headers(options.headers || {});

@@ -24,6 +24,8 @@ let hologramEntryTime = 0;
 const muscleMaterials = {};
 let hologramProfile = null;
 let hologramNutritionDays = new Map();
+let hologramWorkouts = [];
+let hologramWorkoutDataStatus = 'loading';
 
 // =====================================================
 // INTERAÇÃO COM OS MÚSCULOS
@@ -82,30 +84,30 @@ function getWorkoutMuscleGroup(workout) {
 }
 
 function getWorkoutTimestamp(dateKey, workoutTime) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey || '') || !/^\d{2}:\d{2}$/.test(workoutTime || '')) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey || '')) {
     return null;
   }
 
-  const timestamp = new Date(`${dateKey}T${workoutTime}:00`).getTime();
-  return Number.isNaN(timestamp) ? null : timestamp;
+  const time = /^\d{2}:\d{2}$/.test(workoutTime || '')
+    ? workoutTime
+    : '12:00';
+  const timestamp = new Date(`${dateKey}T${time}:00`).getTime();
+  return Number.isNaN(timestamp)
+    ? new Date(`${dateKey}T12:00:00`).getTime()
+    : timestamp;
 }
 
 function getLatestMuscleWorkouts() {
-  const saved = window.UserStorage?.readUserData('workout_session_data', {});
   const latest = {};
 
-  (saved?.temporaryWorkoutStore || []).forEach(([dateKey, workouts]) => {
-    if (!Array.isArray(workouts)) {
-      return;
-    }
-
-    workouts.forEach((workout) => {
+  hologramWorkouts.forEach((day) => {
+    day.exercises.forEach((workout) => {
       if (workout?.checked !== true) {
         return;
       }
 
       const muscleName = getWorkoutMuscleGroup(workout);
-      const timestamp = getWorkoutTimestamp(dateKey, workout?.workoutTime);
+      const timestamp = getWorkoutTimestamp(day.date, workout?.workoutTime);
 
       if (
         muscleName &&
@@ -147,6 +149,7 @@ function updateMuscleMetrics(muscleName = selectedMuscle?.name || null) {
   const fatigueValue = document.getElementById('fatigueValue');
   const selectedMuscleLabel = document.getElementById('selectedMuscleLabel');
   const recoveryTimeValue = document.getElementById('recoveryTimeValue');
+  const energyStatus = document.querySelector('.energy-level-panel .panel-status');
 
   if (!recoveryBar || !recoveryValue || !fatigueBar || !fatigueValue) {
     return;
@@ -177,6 +180,23 @@ function updateMuscleMetrics(muscleName = selectedMuscle?.name || null) {
     recoveryTimeValue.textContent = remainingHours > 0
       ? `${Math.ceil(remainingHours)}h left`
       : 'Ready';
+  }
+
+  if (energyStatus) {
+    if (hologramWorkoutDataStatus === 'loading') {
+      energyStatus.textContent = 'LOADING';
+    } else if (hologramWorkoutDataStatus === 'error') {
+      energyStatus.textContent = 'UNAVAILABLE';
+    } else if (!muscleName || !latestWorkout) {
+      energyStatus.textContent = 'READY';
+    } else {
+      const status = getRecoveryStatus(latestWorkout);
+      energyStatus.textContent = status === 'high'
+        ? 'FATIGUED'
+        : status === 'medium'
+          ? 'RECOVERING'
+          : 'READY';
+    }
   }
 }
 
@@ -357,22 +377,32 @@ async function loadHologramNutritionData() {
   today.setHours(0, 0, 0, 0);
   const from = new Date(today);
   from.setDate(today.getDate() - 6);
+  const workoutFrom = new Date(today);
+  workoutFrom.setDate(today.getDate() - 2);
 
-  try {
-    const [profileResponse, summaryResponse] = await Promise.all([
+  const [nutritionResult, workoutResult] = await Promise.allSettled([
+    Promise.all([
       window.BioTraceApi.request('/profile', { authenticated: true }),
       window.BioTraceApi.request(
         `/nutrition/summary?from=${getLocalDateKey(from)}&to=${getLocalDateKey(today)}`,
         { authenticated: true }
       )
-    ]);
+    ]),
+    window.BioTraceApi.request(
+      `/workouts?from=${getLocalDateKey(workoutFrom)}&to=${getLocalDateKey(today)}`,
+      { authenticated: true }
+    )
+  ]);
 
+  if (nutritionResult.status === 'fulfilled') {
+    const [profileResponse, summaryResponse] = nutritionResult.value;
     hologramProfile = profileResponse.profile;
     hologramNutritionDays = new Map(
       summaryResponse.days.map((day) => [day.date, day])
     );
     updateGoalMetrics();
-  } catch (error) {
+  } else {
+    const error = nutritionResult.reason;
     console.error('Hologram nutrition data error:', error);
     const message = document.getElementById('goalMetricMessage');
     if (message) {
@@ -381,6 +411,19 @@ async function loadHologramNutritionData() {
         : error.message || 'Unable to load nutrition data.';
     }
   }
+
+  if (workoutResult.status === 'fulfilled' && Array.isArray(workoutResult.value)) {
+    hologramWorkouts = workoutResult.value;
+    hologramWorkoutDataStatus = 'ready';
+    applySavedWorkoutStatuses();
+  } else {
+    const error = workoutResult.status === 'rejected'
+      ? workoutResult.reason
+      : new Error('The workouts API returned an invalid response.');
+    hologramWorkoutDataStatus = 'error';
+    console.error('Hologram workout data error:', error);
+  }
+  updateMuscleMetrics();
 }
 
 setupGoalChart();

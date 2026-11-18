@@ -9,6 +9,7 @@ const profileRoutes = require('./routes/profile');
 const nutritionGoalRoutes = require('./routes/nutritionGoal');
 const nutritionSummaryRoutes = require('./routes/nutritionSummary');
 const mealRoutes = require('./routes/meal');
+const workoutRoutes = require('./routes/workout');
 
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api', profileRoutes);
 app.use('/api', nutritionGoalRoutes);
 app.use('/api', nutritionSummaryRoutes);
 app.use('/api', mealRoutes);
+app.use('/api', workoutRoutes);
 
 async function startServer() {
   try {
